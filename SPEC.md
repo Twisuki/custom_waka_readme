@@ -1,0 +1,444 @@
+# custom_waka_readme - 产品规范
+
+> GitHub Action: 编译 profile.md 模板至 README.md, 集成 wakatime 统计与可编程插值.
+>
+> 本文件描述产品需求与基础架构, 作为长期开发与跨设备协作的事实来源. 任何对外契约 (用户可见行为) 的变更, 须先在本文件更新, 再进入实现.
+
+## 目录
+
+- [1. 概述](#1-概述)
+- [2. 设计目标](#2-设计目标)
+- [3. 非目标](#3-非目标)
+- [4. 核心能力](#4-核心能力)
+- [5. 架构](#5-架构)
+- [6. 沙箱与安全](#6-沙箱与安全)
+- [7. 配置](#7-配置)
+- [8. 输出与提交](#8-输出与提交)
+- [9. 错误处理](#9-错误处理)
+- [10. 依赖管理](#10-依赖管理)
+- [11. 附录](#11-附录)
+
+---
+
+## 1. 概述
+
+### 1.1 项目定位
+
+`custom_waka_readme` 是一个公开的 GitHub Action, 用于将用户编写的 `profile.md` 模板文件编译为 GitHub Profile 仓库中的 `README.md`. 编译过程支持两类能力:
+
+- **waka**: 从 wakatime 拉取编码统计数据, 在模板中可直接引用
+- **custom**: 通过自定义 JS 表达式与代码块, 在模板中实现任意可编程插值
+
+### 1.2 问题陈述
+
+现有 wakatime 相关 Action (如 `anmol098/waka-readme-stats`) 通过在 `README.md` 中读取一对特殊 HTML 注释, 写入固定格式的统计图. 该模式存在两个根本限制:
+
+1. **不可定制**: 写入内容由 Action 硬编码, 用户无法调整布局, 文案, 配色, 排序或聚合方式
+2. **二次迭代困难**: Action 输出的内容混入 `README.md` 后, 模板语义消失, 后续 push 只能更新既有内容, 无法重新组织
+
+### 1.3 解决方案
+
+引入**源 - 产物分离**模型:
+
+- `profile.md` 为源文件, 由用户维护
+- `README.md` 为产物, 由 Action 生成
+- Action 读取 `profile.md`, 解析其中两类插值语法, 渲染为 `README.md` 并提交
+
+该模型使用户可以:
+
+- 任意调整模板结构与样式
+- 复用 Action 输出作为其他模板输入 (例如嵌入 SVG 卡)
+- 自由组合 wakatime 数据与自定义计算
+- 跨设备同步与多人协作同一份 `profile.md`
+
+---
+
+## 2. 设计目标
+
+| 目标 | 描述 |
+| --- | --- |
+| 可定制性 | 用户完全控制 `README.md` 的最终结构与内容, 不受 Action 模板约束 |
+| 可编程性 | 模板支持任意 JS 表达式与多语句代码块, 满足复杂计算需求 |
+| 可复用性 | `profile.md` 可纳入版本控制, 跨设备同步, 多人协作 |
+| 安全性 | 用户脚本在沙箱中执行, 物理隔离, 真超时, 内存受控 |
+| 可移植性 | 支持全部 GitHub-hosted runner 平台 (linux-x64, linux-arm64, win-x64, macos-x64, macos-arm64) |
+| 可观测性 | 错误位置 (行号, 表达式) 准确输出至 Action 日志, 便于排障 |
+| 幂等性 | 输入不变时输出不变, 不产生空 commit |
+| 零外部状态 | Action 不依赖本地配置文件, 全部配置来自 `profile.md` frontmatter 与 Action inputs |
+
+---
+
+## 3. 非目标
+
+明确不实现, 以避免范围蔓延:
+
+- **多 Profile 输出**: 不支持一个仓库渲染多份 `README.md`
+- **运行时依赖持久化**: 不支持跨 run 缓存用户安装的 npm 依赖
+- **Profile 市场**: 不提供模板分享与发现功能
+- **数据可视化**: 不内置图表与 SVG 生成 (用户可在代码块内自行构建)
+- **多 wakatime 账号**: 不支持聚合多用户统计
+- **定时触发**: 触发逻辑由用户 workflow 控制, Action 仅在被调用时执行
+- **回写 wakatime**: 不修改 wakatime 端任何数据
+- **本地 CLI**: 暂不提供 `npx` 本地执行模式, 全部经由 GitHub Actions
+
+---
+
+## 4. 核心能力
+
+### 4.1 模板插值 (custom)
+
+#### 4.1.1 Token
+
+`{expr}` 为单行 Token, 其中 `expr` 为可作为 `return` 语句的合法 JS 表达式. Action 将其作为表达式执行, 以结果的字符串形式替换原文.
+
+约束:
+
+- **单行**: Token 不可跨行
+- **单层**: 解析器仅识别 1 层大括号, 多层通过 escape 处理 (见 4.1.2)
+- **作用域**: Token 与代码块共享同一求值上下文, 变量可跨语法节点复用
+
+```markdown
+当前值: {currentValue}
+首项名称: {data[0].name}
+```
+
+#### 4.1.2 Escape
+
+用户在模板中如需输出字面量大括号, 采用 `n + 1` 层输入法. 解析器每次从最外层吃掉一对, 输出 `n` 层:
+
+| 输入 | 输出 |
+| --- | --- |
+| `{{` | `{` |
+| `{{{` | `{{` |
+| `{{{{` | `{{{` |
+
+注: 转义在 Token 解析之前进行, 以避免误触发.
+
+#### 4.1.3 代码块
+
+`<!--CUSTOM_WAKA_START-->` 与 `<!--CUSTOM_WAKA_END-->` 之间的内容视为一段 JS 脚本. 脚本使用 ESM 模式, 可包含多语句 (变量声明, 函数定义, `import` 等), 在模板首次求值时执行一次, 其定义的变量持久化于求值上下文, 供后续 Token 引用.
+
+```markdown
+<!--CUSTOM_WAKA_START-->
+import _ from 'lodash';
+const top3 = data
+  .slice(0, 3)
+  .map(l => `- ${l.name}: ${l.text} (${l.percent}%)`)
+  .join('\n');
+<!--CUSTOM_WAKA_END-->
+
+本月排行:
+
+{top3}
+```
+
+约束:
+
+- 代码块内 `{` 与 `}` 不触发 Token 解析, 一律视为字面量
+- 代码块执行后, 其顶层 `const`, `let`, `var`, `function` 与 `import` 声明进入共享作用域
+
+### 4.2 wakatime 集成 (waka)
+
+#### 4.2.1 接口
+
+唯一数据源为 wakatime REST API. Action 自动拉取编码统计, 覆盖 `last_7_days` 与 `all_time` 两种范围, 用户无需在模板或配置中指定.
+
+```
+GET https://wakatime.com/api/v1/users/current/stats/{range}
+```
+
+#### 4.2.2 鉴权
+
+HTTP Basic Auth, 凭据来自 Secret `WAKATIME_API_KEY`:
+
+```
+Authorization: Basic base64(apiKey)
+```
+
+注: wakatime 官方约定为 `base64(apiKey)`, 用户名占位为空, 密码为 API Key 原文.
+
+#### 4.2.3 响应结构
+
+响应为单对象 (`last_7_days` 与 `all_time` 形态一致, 差异在 `range` 字段). 主要字段类别:
+
+| 类别 | 字段示例 |
+| --- | --- |
+| 总计 | `total_seconds`, `human_readable_total`, `total_seconds_including_other_language`, `human_readable_total_including_other_language` |
+| 平均 | `daily_average`, `human_readable_daily_average` 及对应 `_including_other_language` 版本 |
+| 分类 | `categories[]`, `projects[]`, `languages[]`, `editors[]`, `operating_systems[]`, `dependencies[]`, `machines[]` |
+| 单值 | `best_day { date, text, total_seconds }` |
+| 元 | `range`, `start`, `end`, `timezone`, `user_id`, `username` |
+
+完整字段定义见 [wakatime Developer Docs](https://wakatime.com/developers#stats).
+
+#### 4.2.4 体积
+
+- `last_7_days` 响应约 5-20 KB
+- `all_time` 响应约 200-500 KB (`languages` 等数组可达数百项)
+- Action 每次执行按需拉取, 不跨 run 缓存
+
+---
+
+## 5. 架构
+
+### 5.1 概念分层
+
+产品按以下五层组织, 各层职责清晰分离:
+
+| 层 | 职责 |
+| --- | --- |
+| 配置层 | 解析 `profile.md` frontmatter, 合并 Action inputs, 提供统一配置对象 |
+| 解析层 | 对模板文本做词法分析, 切分 escape / Token / 代码块 / 静态文本 |
+| 数据层 | 拉取 wakatime 统计数据, 鉴权与重试 |
+| 运行时层 | 沙箱环境, 注入 waka 数据, 执行代码块与 Token |
+| 输出层 | 渲染结果, 写入 `README.md`, 触发 commit |
+
+### 5.2 执行流程
+
+Action 按以下顺序执行:
+
+1. **配置**: 解析 `profile.md` frontmatter, 合并 Action inputs
+2. **依赖**: 按 frontmatter `deps` 临时安装第三方包
+3. **解析**: 切分模板为 escape / token / code block / 静态文本
+4. **数据**: 并行拉取 wakatime stats (`last_7_days` 与 `all_time`)
+5. **运行时**: 初始化沙箱, 执行 code block, 依次求值 token
+6. **输出**: 拼接渲染结果, 写入 `README.md`, 内容变更时触发 commit
+
+---
+
+## 6. 沙箱与安全
+
+### 6.1 沙箱
+
+用户脚本在 [`isolated-vm`](https://github.com/laverdet/isolated-vm) 沙箱中执行.
+
+### 6.2 资源限制
+
+- 单 Token 与代码块均设执行超时, 防止死循环阻塞 Action
+- Isolate 设内存上限, 防止脚本耗尽资源
+- 上述参数均可在 frontmatter 中配置, 默认值见实现
+
+### 6.3 威胁模型
+
+| 威胁 | 缓解 |
+| --- | --- |
+| 用户脚本访问文件系统 | 沙箱无 `fs` 概念, 物理隔离 |
+| 用户脚本访问网络 | 沙箱无 `fetch` 概念, 物理隔离 |
+| 用户脚本执行死循环 | 原生 CPU 超时强制中断 |
+| 用户脚本耗尽内存 | Isolate 内存上限 |
+| 用户脚本攻击 host V8 | 独立堆, 无原型链共享 |
+| 用户脚本窃取 Secret | Secret 仅在 host 环境, 不注入沙箱 |
+| npm 依赖供应链攻击 | 锁定版本, 不做浮窗解析 |
+
+---
+
+## 7. 配置
+
+### 7.1 profile.md frontmatter
+
+```yaml
+---
+# git 提交配置
+commit:
+  author: "Your Name"
+  email: "you@example.com"
+  message: "chore: update waka stats"
+
+# 沙箱配置
+sandbox:
+  tokenTimeoutMs: 1000
+  blockTimeoutMs: 5000
+  memoryMb: 64
+
+# 第三方依赖 (编译时 pnpm add)
+deps:
+  - "lodash@^4.17.21"
+  - "dayjs@^1.11.10"
+---
+```
+
+注: 上述 schema 为对外契约, 字段新增或语义变更视为破坏性改动.
+
+### 7.2 action inputs
+
+| Input | 必填 | 默认 | 说明 |
+| --- | --- | --- | --- |
+| `profile_path` | 否 | `profile.md` | 源文件路径 |
+| `output_path` | 否 | `README.md` | 产物文件路径 |
+| `wakatime_api_key` | 否 | `${{ secrets.WAKATIME_API_KEY }}` | wakatime 凭据, 推荐从 Secret 注入 |
+| `commit_author` | 否 | frontmatter `commit.author` | 提交作者 |
+| `commit_email` | 否 | frontmatter `commit.email` | 提交邮箱 |
+| `commit_message` | 否 | frontmatter `commit.message` | 提交信息 |
+
+### 7.3 Secrets
+
+| Secret | 用途 | 是否必填 |
+| --- | --- | --- |
+| `WAKATIME_API_KEY` | wakatime 鉴权 | 是 (启用 waka 时) |
+| `GITHUB_TOKEN` | 自动 commit | 是 |
+
+Secret 仅从 Action 环境变量读取, **不**写入 frontmatter 或模板文本. frontmatter 中如出现同名字段将被忽略并报警.
+
+### 7.4 优先级
+
+```text
+action inputs > frontmatter > 内置默认值
+```
+
+---
+
+## 8. 输出与提交
+
+### 8.1 产物
+
+`README.md` 为全量生成. Action 不做局部替换, 以保证模板语义在源文件中可维护. 编译一次后, 模板中的 `{{` 不会被再次吃掉 (Token 已被替换为结果字符串), 故重复 push 仍可正常更新数据, 而非退化为死文本.
+
+### 8.2 提交
+
+- 内容变更时, 触发提交至仓库
+- 内容未变 (幂等) 时, **不**产生 commit
+- Author, Email, Message 来自 frontmatter, 缺省有内置默认
+
+### 8.3 幂等
+
+通过字节级对比本次渲染结果与仓库当前 `README.md` 内容判定, 一致则跳过提交.
+
+---
+
+## 9. 错误处理
+
+### 9.1 错误分类
+
+产品对以下类别错误做统一处理, 各类行为一致:
+
+| 类别 | 示例 |
+| --- | --- |
+| 配置错误 | frontmatter 字段缺失或类型错误 |
+| 鉴权错误 | `WAKATIME_API_KEY` 缺失或 401 |
+| API 错误 | wakatime 非 2xx 响应或网络超时 |
+| 解析错误 | Token 或代码块语法错误 |
+| 沙箱错误 | 超时或内存超限 |
+| 依赖错误 | 第三方包安装或解析失败 |
+| Git 错误 | commit 或 push 失败 |
+
+具体重试策略与降级行为在实现中确定.
+
+### 9.2 日志
+
+所有错误在 Action 日志中以 `::error file={path},line={line}::` 格式输出, 使 GitHub UI 高亮并定位. 详细信息堆叠于其后.
+
+### 9.3 粒度
+
+**整体失败**: 任意错误均终止 Action, 不会部分写入 `README.md`. 此为安全优先选择, 避免产出半完成产物.
+
+---
+
+## 10. 依赖管理
+
+### 10.1 声明
+
+用户在 `profile.md` frontmatter `deps` 字段声明所需 npm 依赖:
+
+```yaml
+deps:
+  - "lodash@^4.17.21"
+  - "dayjs@^1.11.10"
+```
+
+约束:
+
+- 必须指定版本范围, 不允许 `latest` 或 `*`
+- 版本表达式遵循 semver
+- 不支持 git, tarball, file 协议
+
+### 10.2 安装
+
+Action 在执行前将声明的依赖安装至沙箱可见的位置, 失败立即终止.
+
+### 10.3 调用
+
+用户在代码块内使用 ESM `import` 引入依赖:
+
+```javascript
+import _ from 'lodash';
+import dayjs from 'dayjs';
+```
+
+沙箱要求:
+
+- 仅支持 ESM `import` 语法, 不接受 `require()` 形式
+- 字符串字面量, 不可拼接
+- 仅解析 `deps` 声明过的包, 未声明的包解析失败并明确报错
+
+---
+
+## 11. 附录
+
+### 11.1 完整 profile.md 示例
+
+以下示例展示模板语法. 实际暴露至模板上下文的字段名由实现决定, 此处使用占位符 (`total`, `average`, `peak`, `items`, `meta`).
+
+```markdown
+---
+commit:
+  author: "Your Name"
+  email: "you@example.com"
+  message: "chore: update coding stats"
+deps:
+  - "dayjs@^1.11.10"
+---
+
+# Hi there
+
+当前值: {total}
+日均: {average}
+峰值: {peak.text} ({peak.date})
+
+<!--CUSTOM_WAKA_START-->
+import dayjs from 'dayjs';
+const lastSync = dayjs(meta.updatedAt).format('YYYY-MM-DD HH:mm');
+const top3 = items
+  .slice(0, 3)
+  .map((item, i) => `${i + 1}. **${item.name}** - ${item.value} (${item.percent}%)`)
+  .join('\n');
+<!--CUSTOM_WAKA_END-->
+
+最近同步: {lastSync}
+
+## 排行
+
+{top3}
+
+> 数据来源: wakatime
+```
+
+### 11.2 最小 workflow 示例
+
+```yaml
+name: Update README
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Twisuki/custom_waka_readme@v1
+        with:
+          wakatime_api_key: ${{ secrets.WAKATIME_API_KEY }}
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          file_pattern: README.md
+          commit_message: "chore: update stats"
+```
+
+### 11.3 参考资料
+
+- [wakatime Developer Docs](https://wakatime.com/developers#stats) - API 规范
+- [isolated-vm](https://github.com/laverdet/isolated-vm) - 沙箱实现
+
