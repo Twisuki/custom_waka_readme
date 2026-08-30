@@ -1,0 +1,23 @@
+{
+  "name": "custom_waka_readme",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "GitHub Action: render a custom wakatime-powered README from a profile.md template",
+  "author": "Twisuki",
+  "license": "MIT",
+  "scripts": {
+    "prepare": "husky",
+    "lint": "eslint .",
+    "fix": "eslint . --fix",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^9.3.0",
+    "@commitlint/cli": "^19.6.0",
+    "@commitlint/config-conventional": "^19.6.0",
+    "eslint": "^10.8.0",
+    "eslint-plugin-format": "^2.0.1",
+    "husky": "^9.1.7",
+    "typescript": "^5.7.0"
+  }
+}

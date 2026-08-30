@@ -55,16 +55,16 @@
 
 ## 2. 设计目标
 
-| 目标 | 描述 |
-| --- | --- |
-| 可定制性 | 用户完全控制 `README.md` 的最终结构与内容, 不受 Action 模板约束 |
-| 可编程性 | 模板支持任意 JS 表达式与多语句代码块, 满足复杂计算需求 |
-| 可复用性 | `profile.md` 可纳入版本控制, 跨设备同步, 多人协作 |
-| 安全性 | 用户脚本在沙箱中执行, 物理隔离, 真超时, 内存受控 |
-| 可移植性 | 支持全部 GitHub-hosted runner 平台 (linux-x64, linux-arm64, win-x64, macos-x64, macos-arm64) |
-| 可观测性 | 错误位置 (行号, 表达式) 准确输出至 Action 日志, 便于排障 |
-| 幂等性 | 输入不变时输出不变, 不产生空 commit |
-| 零外部状态 | Action 不依赖本地配置文件, 全部配置来自 `profile.md` frontmatter 与 Action inputs |
+| 目标       | 描述                                                                                         |
+| ---------- | -------------------------------------------------------------------------------------------- |
+| 可定制性   | 用户完全控制 `README.md` 的最终结构与内容, 不受 Action 模板约束                              |
+| 可编程性   | 模板支持任意 JS 表达式与多语句代码块, 满足复杂计算需求                                       |
+| 可复用性   | `profile.md` 可纳入版本控制, 跨设备同步, 多人协作                                            |
+| 安全性     | 用户脚本在沙箱中执行, 物理隔离, 真超时, 内存受控                                             |
+| 可移植性   | 支持全部 GitHub-hosted runner 平台 (linux-x64, linux-arm64, win-x64, macos-x64, macos-arm64) |
+| 可观测性   | 错误位置 (行号, 表达式) 准确输出至 Action 日志, 便于排障                                     |
+| 幂等性     | 输入不变时输出不变, 不产生空 commit                                                          |
+| 零外部状态 | Action 不依赖本地配置文件, 全部配置来自 `profile.md` frontmatter 与 Action inputs            |
 
 ---
 
@@ -106,10 +106,10 @@
 
 用户在模板中如需输出字面量大括号, 采用 `n + 1` 层输入法. 解析器每次从最外层吃掉一对, 输出 `n` 层:
 
-| 输入 | 输出 |
-| --- | --- |
-| `{{` | `{` |
-| `{{{` | `{{` |
+| 输入   | 输出  |
+| ------ | ----- |
+| `{{`   | `{`   |
+| `{{{`  | `{{`  |
 | `{{{{` | `{{{` |
 
 注: 转义在 Token 解析之前进行, 以避免误触发.
@@ -120,11 +120,12 @@
 
 ```markdown
 <!--CUSTOM_WAKA_START-->
+
 import _ from 'lodash';
 const top3 = data
-  .slice(0, 3)
-  .map(l => `- ${l.name}: ${l.text} (${l.percent}%)`)
-  .join('\n');
+.slice(0, 3)
+.map(l => `- ${l.name}: ${l.text} (${l.percent}%)`)
+.join('\n');
 <!--CUSTOM_WAKA_END-->
 
 本月排行:
@@ -161,13 +162,13 @@ GET https://wakatime.com/api/v1/users/current/stats/{range}?api_key={WAKATIME_AP
 
 响应为单对象 (`last_7_days` 与 `all_time` 形态一致, 差异在 `range` 字段). 主要字段类别:
 
-| 类别 | 字段示例 |
-| --- | --- |
+| 类别 | 字段示例                                                                                                                           |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | 总计 | `total_seconds`, `human_readable_total`, `total_seconds_including_other_language`, `human_readable_total_including_other_language` |
-| 平均 | `daily_average`, `human_readable_daily_average` 及对应 `_including_other_language` 版本 |
-| 分类 | `categories[]`, `projects[]`, `languages[]`, `editors[]`, `operating_systems[]`, `dependencies[]`, `machines[]` |
-| 单值 | `best_day { date, text, total_seconds }` |
-| 元 | `range`, `start`, `end`, `timezone`, `user_id`, `username` |
+| 平均 | `daily_average`, `human_readable_daily_average` 及对应 `_including_other_language` 版本                                            |
+| 分类 | `categories[]`, `projects[]`, `languages[]`, `editors[]`, `operating_systems[]`, `dependencies[]`, `machines[]`                    |
+| 单值 | `best_day { date, text, total_seconds }`                                                                                           |
+| 元   | `range`, `start`, `end`, `timezone`, `user_id`, `username`                                                                         |
 
 完整字段定义见 [wakatime Developer Docs](https://wakatime.com/developers#stats).
 
@@ -184,6 +185,7 @@ Action 提供 mock 模式用于本地开发与单元测试. 启用后, wakatime 
 启用方式: Action input `mock_wakatime: "true"` (详见 §7.2).
 
 启用后:
+
 - 不发出任何 HTTP 请求至 wakatime
 - `WAKATIME_API_KEY` 可缺失 (mock 模式不消费凭据)
 - 数据来自仓库 `mock/` 目录下两份固定 fixture: `last_7_days.json` 与 `all_time.json`, 结构与真实响应字段一致
@@ -197,13 +199,13 @@ Action 提供 mock 模式用于本地开发与单元测试. 启用后, wakatime 
 
 产品按以下五层组织, 各层职责清晰分离:
 
-| 层 | 职责 |
-| --- | --- |
-| 配置层 | 解析 `profile.md` frontmatter, 合并 Action inputs, 提供统一配置对象 |
-| 解析层 | 对模板文本做词法分析, 切分 escape / Token / 代码块 / 静态文本 |
-| 数据层 | 拉取 wakatime 统计数据, 鉴权与重试 |
-| 运行时层 | 沙箱环境, 注入 waka 数据, 执行代码块与 Token |
-| 输出层 | 渲染结果, 写入 `README.md`, 触发 commit |
+| 层       | 职责                                                                |
+| -------- | ------------------------------------------------------------------- |
+| 配置层   | 解析 `profile.md` frontmatter, 合并 Action inputs, 提供统一配置对象 |
+| 解析层   | 对模板文本做词法分析, 切分 escape / Token / 代码块 / 静态文本       |
+| 数据层   | 拉取 wakatime 统计数据, 鉴权与重试                                  |
+| 运行时层 | 沙箱环境, 注入 waka 数据, 执行代码块与 Token                        |
+| 输出层   | 渲染结果, 写入 `README.md`, 触发 commit                             |
 
 ### 5.2 执行流程
 
@@ -232,15 +234,15 @@ Action 按以下顺序执行:
 
 ### 6.3 威胁模型
 
-| 威胁 | 缓解 |
-| --- | --- |
-| 用户脚本访问文件系统 | 沙箱无 `fs` 概念, 物理隔离 |
-| 用户脚本访问网络 | 沙箱无 `fetch` 概念, 物理隔离 |
-| 用户脚本执行死循环 | 原生 CPU 超时强制中断 |
-| 用户脚本耗尽内存 | Isolate 内存上限 |
-| 用户脚本攻击 host V8 | 独立堆, 无原型链共享 |
-| 用户脚本窃取 Secret | Secret 仅在 host 环境, 不注入沙箱 |
-| npm 依赖供应链攻击 | 锁定版本, 不做浮窗解析 |
+| 威胁                 | 缓解                              |
+| -------------------- | --------------------------------- |
+| 用户脚本访问文件系统 | 沙箱无 `fs` 概念, 物理隔离        |
+| 用户脚本访问网络     | 沙箱无 `fetch` 概念, 物理隔离     |
+| 用户脚本执行死循环   | 原生 CPU 超时强制中断             |
+| 用户脚本耗尽内存     | Isolate 内存上限                  |
+| 用户脚本攻击 host V8 | 独立堆, 无原型链共享              |
+| 用户脚本窃取 Secret  | Secret 仅在 host 环境, 不注入沙箱 |
+| npm 依赖供应链攻击   | 锁定版本, 不做浮窗解析            |
 
 ---
 
@@ -252,8 +254,8 @@ Action 按以下顺序执行:
 ---
 # git 提交配置
 commit:
-  author: "Your Name"
-  email: "you@example.com"
+  author: Your Name
+  email: you@example.com
   message: "chore: update waka stats"
 
 # 沙箱配置
@@ -264,8 +266,8 @@ sandbox:
 
 # 第三方依赖 (编译时 pnpm add)
 deps:
-  - "lodash@^4.17.21"
-  - "dayjs@^1.11.10"
+  - lodash@^4.17.21
+  - dayjs@^1.11.10
 ---
 ```
 
@@ -273,22 +275,22 @@ deps:
 
 ### 7.2 action inputs
 
-| Input | 必填 | 默认 | 说明 |
-| --- | --- | --- | --- |
-| `profile_path` | 否 | `profile.md` | 源文件路径 |
-| `output_path` | 否 | `README.md` | 产物文件路径 |
-| `wakatime_api_key` | 否 | `${{ secrets.WAKATIME_API_KEY }}` | wakatime 凭据, 推荐从 Secret 注入; mock 模式下可缺失 |
-| `mock_wakatime` | 否 | `"false"` | 启用 wakatime mock 模式, 取值遵循 `_TRUTHY` (见 §7.5) |
-| `commit_author` | 否 | frontmatter `commit.author` | 提交作者 |
-| `commit_email` | 否 | frontmatter `commit.email` | 提交邮箱 |
-| `commit_message` | 否 | frontmatter `commit.message` | 提交信息 |
+| Input              | 必填 | 默认                              | 说明                                                  |
+| ------------------ | ---- | --------------------------------- | ----------------------------------------------------- |
+| `profile_path`     | 否   | `profile.md`                      | 源文件路径                                            |
+| `output_path`      | 否   | `README.md`                       | 产物文件路径                                          |
+| `wakatime_api_key` | 否   | `${{ secrets.WAKATIME_API_KEY }}` | wakatime 凭据, 推荐从 Secret 注入; mock 模式下可缺失  |
+| `mock_wakatime`    | 否   | `"false"`                         | 启用 wakatime mock 模式, 取值遵循 `_TRUTHY` (见 §7.5) |
+| `commit_author`    | 否   | frontmatter `commit.author`       | 提交作者                                              |
+| `commit_email`     | 否   | frontmatter `commit.email`        | 提交邮箱                                              |
+| `commit_message`   | 否   | frontmatter `commit.message`      | 提交信息                                              |
 
 ### 7.3 Secrets
 
-| Secret | 用途 | 是否必填 |
-| --- | --- | --- |
+| Secret             | 用途          | 是否必填                     |
+| ------------------ | ------------- | ---------------------------- |
 | `WAKATIME_API_KEY` | wakatime 鉴权 | mock 模式: 否 / 正常模式: 是 |
-| `GITHUB_TOKEN` | 自动 commit | 是 |
+| `GITHUB_TOKEN`     | 自动 commit   | 是                           |
 
 Secret 仅从 Action 环境变量读取, **不**写入 frontmatter 或模板文本. frontmatter 中如出现同名字段将被忽略并报警.
 
@@ -334,15 +336,15 @@ _TRUTHY = ["true", "1", "t", "y", "yes"]
 
 产品对以下类别错误做统一处理, 各类行为一致:
 
-| 类别 | 示例 |
-| --- | --- |
+| 类别     | 示例                           |
+| -------- | ------------------------------ |
 | 配置错误 | frontmatter 字段缺失或类型错误 |
-| 鉴权错误 | `WAKATIME_API_KEY` 缺失或 401 |
+| 鉴权错误 | `WAKATIME_API_KEY` 缺失或 401  |
 | API 错误 | wakatime 非 2xx 响应或网络超时 |
-| 解析错误 | Token 或代码块语法错误 |
-| 沙箱错误 | 超时或内存超限 |
-| 依赖错误 | 第三方包安装或解析失败 |
-| Git 错误 | commit 或 push 失败 |
+| 解析错误 | Token 或代码块语法错误         |
+| 沙箱错误 | 超时或内存超限                 |
+| 依赖错误 | 第三方包安装或解析失败         |
+| Git 错误 | commit 或 push 失败            |
 
 具体重试策略与降级行为在实现中确定.
 
@@ -364,8 +366,8 @@ _TRUTHY = ["true", "1", "t", "y", "yes"]
 
 ```yaml
 deps:
-  - "lodash@^4.17.21"
-  - "dayjs@^1.11.10"
+  - lodash@^4.17.21
+  - dayjs@^1.11.10
 ```
 
 约束:
@@ -383,8 +385,8 @@ Action 在执行前将声明的依赖安装至沙箱可见的位置, 失败立�
 用户在代码块内使用 ESM `import` 引入依赖:
 
 ```javascript
-import _ from 'lodash';
-import dayjs from 'dayjs';
+import dayjs from "dayjs"
+import _ from "lodash"
 ```
 
 沙箱要求:
@@ -418,12 +420,13 @@ deps:
 峰值: {peak.text} ({peak.date})
 
 <!--CUSTOM_WAKA_START-->
+
 import dayjs from 'dayjs';
 const lastSync = dayjs(meta.updatedAt).format('YYYY-MM-DD HH:mm');
 const top3 = items
-  .slice(0, 3)
-  .map((item, i) => `${i + 1}. **${item.name}** - ${item.value} (${item.percent}%)`)
-  .join('\n');
+.slice(0, 3)
+.map((item, i) => `${i + 1}. **${item.name}** - ${item.value} (${item.percent}%)`)
+.join('\n');
 <!--CUSTOM_WAKA_END-->
 
 最近同步: {lastSync}
@@ -464,4 +467,3 @@ jobs:
 
 - [wakatime Developer Docs](https://wakatime.com/developers#stats) - API 规范
 - [isolated-vm](https://github.com/laverdet/isolated-vm) - 沙箱实现
-
