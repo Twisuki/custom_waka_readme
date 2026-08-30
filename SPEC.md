@@ -149,13 +149,13 @@ GET https://wakatime.com/api/v1/users/current/stats/{range}
 
 #### 4.2.2 鉴权
 
-HTTP Basic Auth, 凭据来自 Secret `WAKATIME_API_KEY`:
+凭据通过 URL query string 传递, 来源为 Secret `WAKATIME_API_KEY`:
 
 ```
-Authorization: Basic base64(apiKey)
+GET https://wakatime.com/api/v1/users/current/stats/{range}?api_key={WAKATIME_API_KEY}
 ```
 
-注: wakatime 官方约定为 `base64(apiKey)`, 用户名占位为空, 密码为 API Key 原文.
+注: wakatime 同时支持 HTTP Basic Auth 与 query string 两种鉴权方式, 本规格选择 query string — 客户端无需拼装 `Authorization` 头, 实现更轻.
 
 #### 4.2.3 响应结构
 
@@ -176,6 +176,18 @@ Authorization: Basic base64(apiKey)
 - `last_7_days` 响应约 5-20 KB
 - `all_time` 响应约 200-500 KB (`languages` 等数组可达数百项)
 - Action 每次执行按需拉取, 不跨 run 缓存
+
+#### 4.2.5 Mock 模式
+
+Action 提供 mock 模式用于本地开发与单元测试. 启用后, wakatime 调用被替换为读取仓库内置的 JSON fixture, 行为对上层完全一致 (返回相同结构的对象), 仅数据来源不同.
+
+启用方式: Action input `mock_wakatime: "true"` (详见 §7.2).
+
+启用后:
+- 不发出任何 HTTP 请求至 wakatime
+- `WAKATIME_API_KEY` 可缺失 (mock 模式不消费凭据)
+- 数据来自仓库 `mock/` 目录下两份固定 fixture: `last_7_days.json` 与 `all_time.json`, 结构与真实响应字段一致
+- 阶段十测试可借此跑出确定性结果, 不依赖网络或真实 wakatime 账号
 
 ---
 
@@ -265,7 +277,8 @@ deps:
 | --- | --- | --- | --- |
 | `profile_path` | 否 | `profile.md` | 源文件路径 |
 | `output_path` | 否 | `README.md` | 产物文件路径 |
-| `wakatime_api_key` | 否 | `${{ secrets.WAKATIME_API_KEY }}` | wakatime 凭据, 推荐从 Secret 注入 |
+| `wakatime_api_key` | 否 | `${{ secrets.WAKATIME_API_KEY }}` | wakatime 凭据, 推荐从 Secret 注入; mock 模式下可缺失 |
+| `mock_wakatime` | 否 | `"false"` | 启用 wakatime mock 模式, 取值遵循 `_TRUTHY` (见 §7.5) |
 | `commit_author` | 否 | frontmatter `commit.author` | 提交作者 |
 | `commit_email` | 否 | frontmatter `commit.email` | 提交邮箱 |
 | `commit_message` | 否 | frontmatter `commit.message` | 提交信息 |
@@ -274,7 +287,7 @@ deps:
 
 | Secret | 用途 | 是否必填 |
 | --- | --- | --- |
-| `WAKATIME_API_KEY` | wakatime 鉴权 | 是 (启用 waka 时) |
+| `WAKATIME_API_KEY` | wakatime 鉴权 | mock 模式: 否 / 正常模式: 是 |
 | `GITHUB_TOKEN` | 自动 commit | 是 |
 
 Secret 仅从 Action 环境变量读取, **不**写入 frontmatter 或模板文本. frontmatter 中如出现同名字段将被忽略并报警.
@@ -284,6 +297,16 @@ Secret 仅从 Action 环境变量读取, **不**写入 frontmatter 或模板文�
 ```text
 action inputs > frontmatter > 内置默认值
 ```
+
+### 7.5 布尔解析约定
+
+接受 `_TRUTHY` 列表中任一字符串作为真值, 其余视为假值:
+
+```text
+_TRUTHY = ["true", "1", "t", "y", "yes"]
+```
+
+比较时大小写不敏感. 此约定适用于所有声明为布尔语义的 input (如 `mock_wakatime`).
 
 ---
 
