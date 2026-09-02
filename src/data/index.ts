@@ -1,6 +1,6 @@
-import type { ContextData, Range } from "../type"
-import { fetchData } from "./fetch"
-import { formatData } from "./format"
+import type { ContextData, Range } from "@/type"
+import { fetchData } from "@/data/fetch"
+import { formatData } from "@/data/format"
 
 export interface GetDataOptions {
   mock?: boolean

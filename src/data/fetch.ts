@@ -1,4 +1,4 @@
-import type { StatsRange, WakaResponse } from "./schema"
+import type { StatsRange, WakaResponse } from "@/data/schema"
 
 export async function fetchData(apiKey: string, range: StatsRange): Promise<WakaResponse> {
   const url = `https://wakatime.com/api/v1/users/current/stats/${range}?api_key=${encodeURIComponent(apiKey)}`

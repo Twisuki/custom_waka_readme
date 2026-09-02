@@ -1,5 +1,5 @@
-import type { CodingData, CommonData, ContextData, Edit, Range, Usage, WakaData } from "../type"
-import type { StatsData } from "./schema"
+import type { StatsData } from "@/data/schema"
+import type { CodingData, CommonData, ContextData, Edit, Range, Usage, WakaData } from "@/type"
 
 function formatEdit(ai: number, human: number): Edit {
   return { ai, human, total: ai + human }

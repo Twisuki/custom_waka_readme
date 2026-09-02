@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "fix": "eslint . --fix",
     "check": "tsc --noEmit",
-    "build": "tsc -p tsconfig.build.json && esbuild src/index.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/index.js"
+    "build": "tsc -p tsconfig.build.json && esbuild src/index.ts --bundle --platform=node --target=node22 --format=esm --alias:@=./src --outfile=dist/index.js"
   },
   "dependencies": {
     "@actions/core": "^1.11.1",

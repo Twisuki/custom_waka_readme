@@ -1,5 +1,5 @@
 import * as core from "@actions/core"
-import { getData } from "./data"
+import { getData } from "@/data"
 
 interface ActionInputs {
   profilePath: string
