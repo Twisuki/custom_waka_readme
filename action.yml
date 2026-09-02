@@ -1,0 +1,78 @@
+name: Custom Waka README
+description: Render a custom wakatime-powered README from a profile.md template
+author: Twisuki
+
+branding:
+  icon: clock
+  color: yellow
+
+inputs:
+  profile_path:
+    description: Source profile.md path
+    required: false
+    default: profile.md
+  output_path:
+    description: Output README.md path
+    required: false
+    default: README.md
+  wakatime_api_key:
+    description: Wakatime API key (or use WAKATIME_API_KEY secret)
+    required: false
+    default: ${{ secrets.WAKATIME_API_KEY }}
+  mock_wakatime:
+    description: "Enable wakatime mock mode (read fixtures from mock/*.json)"
+    required: false
+    default: "false"
+  commit_author:
+    description: Commit author (overrides frontmatter)
+    required: false
+    default: ""
+  commit_email:
+    description: Commit email (overrides frontmatter)
+    required: false
+    default: ""
+  commit_message:
+    description: Commit message (overrides frontmatter)
+    required: false
+    default: ""
+
+outputs:
+  readme_path:
+    description: Path to the rendered README
+    value: ${{ steps.run.outputs.readme_path }}
+  changed:
+    description: Whether the README content changed (truthy / falsy string)
+    value: ${{ steps.run.outputs.changed }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+        cache: pnpm
+
+    - name: Enable pnpm via corepack
+      shell: bash
+      run: corepack enable
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Build
+      shell: bash
+      run: pnpm build
+
+    - name: Run
+      id: run
+      shell: bash
+      env:
+        INPUT_PROFILE_PATH: ${{ inputs.profile_path }}
+        INPUT_OUTPUT_PATH: ${{ inputs.output_path }}
+        INPUT_WAKATIME_API_KEY: ${{ inputs.wakatime_api_key }}
+        INPUT_MOCK_WAKATIME: ${{ inputs.mock_wakatime }}
+        INPUT_COMMIT_AUTHOR: ${{ inputs.commit_author }}
+        INPUT_COMMIT_EMAIL: ${{ inputs.commit_email }}
+        INPUT_COMMIT_MESSAGE: ${{ inputs.commit_message }}
+      run: node ${{ github.action_path }}/dist/index.js

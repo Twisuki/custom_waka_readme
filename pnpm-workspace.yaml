@@ -1,0 +1,12 @@
+shellEmulator: true
+
+trustPolicy: no-downgrade
+
+allowBuilds:
+  esbuild: true
+
+# 覆盖被 pnpm trust-policy 标记为 "High-risk trust downgrade" (可能 takeover) 的传递依赖
+# undici@5.29.0 通过 @actions/http-client@2.2.3 → @actions/core@1.11.1 进入
+# 锁到 ^6.23.0: 6.x 当前最新 6.28.0, 在 @actions/http-client@4 的允许范围内, 不被 trust-policy 拒绝
+overrides:
+  undici: ^6.23.0
