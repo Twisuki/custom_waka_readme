@@ -15,7 +15,6 @@
 - [7. 配置](#7-配置)
 - [8. 输出与提交](#8-输出与提交)
 - [9. 错误处理](#9-错误处理)
-- [10. 依赖管理](#10-依赖管理)
 - [11. 附录](#11-附录)
 
 ---
@@ -73,7 +72,6 @@
 明确不实现, 以避免范围蔓延:
 
 - **多 Profile 输出**: 不支持一个仓库渲染多份 `README.md`
-- **运行时依赖持久化**: 不支持跨 run 缓存用户安装的 npm 依赖
 - **Profile 市场**: 不提供模板分享与发现功能
 - **数据可视化**: 不内置图表与 SVG 生成 (用户可在代码块内自行构建)
 - **多 wakatime 账号**: 不支持聚合多用户统计
@@ -116,12 +114,11 @@
 
 #### 4.1.3 代码块
 
-`<!--CUSTOM_WAKA_START-->` 与 `<!--CUSTOM_WAKA_END-->` 之间的内容视为一段 JS 脚本. 脚本使用 ESM 模式, 可包含多语句 (变量声明, 函数定义, `import` 等), 在模板首次求值时执行一次, 其定义的变量持久化于求值上下文, 供后续 Token 引用.
+`<!--CUSTOM_WAKA_START-->` 与 `<!--CUSTOM_WAKA_END-->` 之间的内容视为一段 JS 脚本. 可包含多语句 (变量声明, 函数定义 等), 在模板首次求值时执行一次, 其定义的变量持久化于求值上下文, 供后续 Token 引用.
 
 ```markdown
 <!--CUSTOM_WAKA_START-->
 
-import _ from 'lodash';
 const top3 = data
 .slice(0, 3)
 .map(l => `- ${l.name}: ${l.text} (${l.percent}%)`)
@@ -136,7 +133,7 @@ const top3 = data
 约束:
 
 - 代码块内 `{` 与 `}` 不触发 Token 解析, 一律视为字面量
-- 代码块执行后, 其顶层 `const`, `let`, `var`, `function` 与 `import` 声明进入共享作用域
+- 代码块执行后, 其顶层 `const`, `let`, `var`, `function` 声明进入共享作用域
 
 #### 4.1.4 求值上下文
 
@@ -213,11 +210,10 @@ Action 提供 mock 模式用于本地开发与单元测试. 启用后, wakatime 
 Action 按以下顺序执行:
 
 1. **配置**: 解析 `profile.md` frontmatter, 合并 Action inputs
-2. **依赖**: 按 frontmatter `deps` 临时安装第三方包
-3. **解析**: 切分模板为 escape / token / code block / 静态文本
-4. **数据**: 并行拉取 wakatime stats (`last_7_days` 与 `all_time`)
-5. **运行时**: 初始化沙箱, 执行 code block, 依次求值 token
-6. **输出**: 拼接渲染结果, 写入 `README.md`, 内容变更时触发 commit
+2. **解析**: 切分模板为 escape / token / code block / 静态文本
+3. **数据**: 并行拉取 wakatime stats (`last_7_days` 与 `all_time`)
+4. **运行时**: 初始化沙箱, 执行 code block, 依次求值 token
+5. **输出**: 拼接渲染结果, 写入 `README.md`, 内容变更时触发 commit
 
 ---
 
@@ -243,7 +239,6 @@ Action 按以下顺序执行:
 | 用户脚本耗尽内存     | Isolate 内存上限                  |
 | 用户脚本攻击 host V8 | 独立堆, 无原型链共享              |
 | 用户脚本窃取 Secret  | Secret 仅在 host 环境, 不注入沙箱 |
-| npm 依赖供应链攻击   | 锁定版本, 不做浮窗解析            |
 
 ---
 
@@ -264,11 +259,6 @@ sandbox:
   tokenTimeoutMs: 1000
   blockTimeoutMs: 5000
   memoryMb: 64
-
-# 第三方依赖 (编译时 pnpm add)
-deps:
-  - lodash@^4.17.21
-  - dayjs@^1.11.10
 ---
 ```
 
@@ -344,7 +334,6 @@ _TRUTHY = ["true", "1", "t", "y", "yes"]
 | API 错误 | wakatime 非 2xx 响应或网络超时 |
 | 解析错误 | Token 或代码块语法错误         |
 | 沙箱错误 | 超时或内存超限                 |
-| 依赖错误 | 第三方包安装或解析失败         |
 | Git 错误 | commit 或 push 失败            |
 
 具体重试策略与降级行为在实现中确定.
@@ -356,45 +345,6 @@ _TRUTHY = ["true", "1", "t", "y", "yes"]
 ### 9.3 粒度
 
 **整体失败**: 任意错误均终止 Action, 不会部分写入 `README.md`. 此为安全优先选择, 避免产出半完成产物.
-
----
-
-## 10. 依赖管理
-
-### 10.1 声明
-
-用户在 `profile.md` frontmatter `deps` 字段声明所需 npm 依赖:
-
-```yaml
-deps:
-  - lodash@^4.17.21
-  - dayjs@^1.11.10
-```
-
-约束:
-
-- 必须指定版本范围, 不允许 `latest` 或 `*`
-- 版本表达式遵循 semver
-- 不支持 git, tarball, file 协议
-
-### 10.2 安装
-
-Action 在执行前将声明的依赖安装至沙箱可见的位置, 失败立即终止.
-
-### 10.3 调用
-
-用户在代码块内使用 ESM `import` 引入依赖:
-
-```javascript
-import dayjs from "dayjs"
-import _ from "lodash"
-```
-
-沙箱要求:
-
-- 仅支持 ESM `import` 语法, 不接受 `require()` 形式
-- 字符串字面量, 不可拼接
-- 仅解析 `deps` 声明过的包, 未声明的包解析失败并明确报错
 
 ---
 
@@ -410,8 +360,6 @@ commit:
   author: "Your Name"
   email: "you@example.com"
   message: "chore: update coding stats"
-deps:
-  - "dayjs@^1.11.10"
 ---
 
 # Hi there
@@ -422,15 +370,11 @@ deps:
 
 <!--CUSTOM_WAKA_START-->
 
-import dayjs from 'dayjs';
-const lastSync = dayjs(meta.updatedAt).format('YYYY-MM-DD HH:mm');
 const top3 = items
 .slice(0, 3)
 .map((item, i) => `${i + 1}. **${item.name}** - ${item.value} (${item.percent}%)`)
 .join('\n');
 <!--CUSTOM_WAKA_END-->
-
-最近同步: {lastSync}
 
 ## 排行
 
