@@ -1,32 +1,11 @@
-import type { ContextData, Range } from "@/type"
+import type { ContextData } from "@/type"
 import { fetchData } from "@/data/fetch"
 import { formatData } from "@/data/format"
-
-export interface GetDataOptions {
-  mock?: boolean
-}
-
-function emptyRange<T>(): Range<T> {
-  return { all: null, week: null }
-}
 
 /**
  * 获取 wakatime stats, 转换为上下文格式数据
  */
-export async function getData(apiKey: string, options: GetDataOptions = {}): Promise<ContextData> {
-  if (options.mock) {
-    return {
-      waka: emptyRange(),
-      categories: emptyRange(),
-      projects: emptyRange(),
-      languages: emptyRange(),
-      editors: emptyRange(),
-      oss: emptyRange(),
-      dependencies: emptyRange(),
-      machines: emptyRange(),
-    }
-  }
-
+export async function getData(apiKey: string): Promise<ContextData> {
   const [weekResponse, allResponse] = await Promise.all([
     fetchData(apiKey, "last_7_days").catch(() => null),
     fetchData(apiKey, "all_time").catch(() => null),

@@ -4,11 +4,14 @@ export interface Config {
   profile: string
   output: string
   apiKey: string
-  mock: boolean
   commit: {
     author: string
     email: string
     message: string
+  }
+  sandbox: {
+    timeout: number
+    memory: number
   }
 }
 

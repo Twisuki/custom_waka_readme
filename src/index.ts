@@ -11,12 +11,9 @@ async function run(): Promise<void> {
     const config = loadConfig()
     core.debug(`profile_path: ${config.profile}`)
     core.debug(`output_path: ${config.output}`)
-    core.debug(`mock_wakatime: ${config.mock}`)
-    if (config.apiKey && !config.mock) {
-      core.debug(`wakatime_api_key: *** (length ${config.apiKey.length})`)
-    }
+    core.debug(`wakatime_api_key: *** (length ${config.apiKey.length})`)
 
-    const data = await getData(config.apiKey, { mock: config.mock })
+    const data = await getData(config.apiKey)
     core.debug(`waka.all = ${data.waka.all ? "present" : "null"}, waka.week = ${data.waka.week ? "present" : "null"}`)
 
     const nodes = await getProfile(config.profile)

@@ -15,7 +15,7 @@
 - [7. 配置](#7-配置)
 - [8. 输出与提交](#8-输出与提交)
 - [9. 错误处理](#9-错误处理)
-- [11. 附录](#11-附录)
+- [10. 附录](#10-附录)
 
 ---
 
@@ -63,7 +63,7 @@
 | 可移植性   | 支持全部 GitHub-hosted runner 平台 (linux-x64, linux-arm64, win-x64, macos-x64, macos-arm64) |
 | 可观测性   | 错误位置 (行号, 表达式) 准确输出至 Action 日志, 便于排障                                     |
 | 幂等性     | 输入不变时输出不变, 不产生空 commit                                                          |
-| 零外部状态 | Action 不依赖本地配置文件, 全部配置来自 `profile.md` frontmatter 与 Action inputs            |
+| 零外部状态 | Action 不依赖本地配置文件, 全部配置来自 Action inputs                                        |
 
 ---
 
@@ -212,40 +212,25 @@ GET https://wakatime.com/api/v1/users/current/stats/{range}?api_key={WAKATIME_AP
 - `all_time` 响应约 200-500 KB (`languages` 等数组可达数百项)
 - Action 每次执行按需拉取, 不跨 run 缓存
 
-#### 4.2.5 Mock 模式
-
-Action 提供 mock 模式用于本地开发与单元测试. 启用后, wakatime 调用被替换为读取仓库内置的 JSON fixture, 行为对上层完全一致 (返回相同结构的对象), 仅数据来源不同.
-
-启用方式: Action input `mock_wakatime: "true"` (详见 §7.2).
-
-启用后:
-
-- 不发出任何 HTTP 请求至 wakatime
-- `WAKATIME_API_KEY` 可缺失 (mock 模式不消费凭据)
-- 数据来自仓库 `mock/` 目录下两份固定 fixture: `last_7_days.json` 与 `all_time.json`, 结构与真实响应字段一致
-- 阶段十测试可借此跑出确定性结果, 不依赖网络或真实 wakatime 账号
-
----
-
 ## 5. 架构
 
 ### 5.1 概念分层
 
 产品按以下五层组织, 各层职责清晰分离:
 
-| 层       | 职责                                                                |
-| -------- | ------------------------------------------------------------------- |
-| 配置层   | 解析 `profile.md` frontmatter, 合并 Action inputs, 提供统一配置对象 |
-| 解析层   | 对模板文本做词法分析, 切分 escape / Token / 代码块 / 静态文本       |
-| 数据层   | 拉取 wakatime 统计数据, 鉴权与重试                                  |
-| 运行时层 | 沙箱环境, 注入 waka 数据, 执行代码块与 Token                        |
-| 输出层   | 渲染结果, 写入 `README.md`, 触发 commit                             |
+| 层       | 职责                                                          |
+| -------- | ------------------------------------------------------------- |
+| 配置层   | 解析 Action inputs, 提供统一配置对象                          |
+| 解析层   | 对模板文本做词法分析, 切分 escape / Token / 代码块 / 静态文本 |
+| 数据层   | 拉取 wakatime 统计数据, 鉴权与重试                            |
+| 运行时层 | 沙箱环境, 注入 waka 数据, 执行代码块与 Token                  |
+| 输出层   | 渲染结果, 写入 `README.md`, 触发 commit                       |
 
 ### 5.2 执行流程
 
 Action 按以下顺序执行:
 
-1. **配置**: 解析 `profile.md` frontmatter, 合并 Action inputs
+1. **配置**: 解析 Action inputs
 2. **解析**: 切分模板为 escape / token / code block / 静态文本
 3. **数据**: 并行拉取 wakatime stats (`last_7_days` 与 `all_time`)
 4. **运行时**: 初始化沙箱, 执行 code block, 依次求值 token
@@ -263,7 +248,7 @@ Action 按以下顺序执行:
 
 - 单 Token 与代码块均设执行超时, 防止死循环阻塞 Action
 - Isolate 设内存上限, 防止脚本耗尽资源
-- 上述参数均可在 frontmatter 中配置, 默认值见实现
+- 上述参数默认值见实现, 可通过对应 action input 调整 (见 §7.1)
 
 ### 6.3 威胁模型
 
@@ -280,54 +265,37 @@ Action 按以下顺序执行:
 
 ## 7. 配置
 
-### 7.1 profile.md frontmatter
+### 7.1 action inputs
 
-```yaml
----
-# git 提交配置
-commit:
-  author: Your Name
-  email: you@example.com
-  message: "chore: update waka stats"
+action.yml **不设 default 字段**, 所有默认值由实现层统一注入 (见 `src/config.ts` 的 `DEFAULTS` 常量). `required: false` 仅代表可选, 不代表有默认值.
 
-# 沙箱配置
-sandbox:
-  tokenTimeoutMs: 1000
-  blockTimeoutMs: 5000
-  memoryMb: 64
----
-```
+| Input              | 必填 | 默认                                                    | 说明                              |
+| ------------------ | ---- | ------------------------------------------------------- | --------------------------------- |
+| `profile_path`     | 否   | `profile.md`                                            | 源文件路径                        |
+| `output_path`      | 否   | `README.md`                                             | 产物文件路径                      |
+| `wakatime_api_key` | 是   | 无                                                      | wakatime 凭据, 推荐从 Secret 注入 |
+| `commit_author`    | 否   | `waka_bot`                                              | 提交作者                          |
+| `commit_email`     | 否   | `41898282+github-actions[bot]@users.noreply.github.com` | 提交邮箱                          |
+| `commit_message`   | 否   | `feat: Update custom waka readme`                       | 提交信息                          |
+| `sandbox_timeout`  | 否   | `10000`                                                 | 脚本执行超时 (Token 与代码块共用) |
+| `sandbox_memory`   | 否   | `128`                                                   | 沙箱 Isolate 内存上限             |
 
-注: 上述 schema 为对外契约, 字段新增或语义变更视为破坏性改动.
+### 7.2 Secrets
 
-### 7.2 action inputs
+| Secret             | 用途          | 是否必填 |
+| ------------------ | ------------- | -------- |
+| `WAKATIME_API_KEY` | wakatime 鉴权 | 是       |
+| `GITHUB_TOKEN`     | 自动 commit   | 是       |
 
-| Input              | 必填 | 默认                              | 说明                                                  |
-| ------------------ | ---- | --------------------------------- | ----------------------------------------------------- |
-| `profile_path`     | 否   | `profile.md`                      | 源文件路径                                            |
-| `output_path`      | 否   | `README.md`                       | 产物文件路径                                          |
-| `wakatime_api_key` | 否   | `${{ secrets.WAKATIME_API_KEY }}` | wakatime 凭据, 推荐从 Secret 注入; mock 模式下可缺失  |
-| `mock_wakatime`    | 否   | `"false"`                         | 启用 wakatime mock 模式, 取值遵循 `_TRUTHY` (见 §7.5) |
-| `commit_author`    | 否   | frontmatter `commit.author`       | 提交作者                                              |
-| `commit_email`     | 否   | frontmatter `commit.email`        | 提交邮箱                                              |
-| `commit_message`   | 否   | frontmatter `commit.message`      | 提交信息                                              |
+Secret 仅从 Action 环境变量读取, **不**写入模板文本.
 
-### 7.3 Secrets
-
-| Secret             | 用途          | 是否必填                     |
-| ------------------ | ------------- | ---------------------------- |
-| `WAKATIME_API_KEY` | wakatime 鉴权 | mock 模式: 否 / 正常模式: 是 |
-| `GITHUB_TOKEN`     | 自动 commit   | 是                           |
-
-Secret 仅从 Action 环境变量读取, **不**写入 frontmatter 或模板文本. frontmatter 中如出现同名字段将被忽略并报警.
-
-### 7.4 优先级
+### 7.3 优先级
 
 ```text
-action inputs > frontmatter > 内置默认值
+action inputs > 内置默认值
 ```
 
-### 7.5 布尔解析约定
+### 7.4 布尔解析约定
 
 接受 `_TRUTHY` 列表中任一字符串作为真值, 其余视为假值:
 
@@ -335,7 +303,7 @@ action inputs > frontmatter > 内置默认值
 _TRUTHY = ["true", "1", "t", "y", "yes"]
 ```
 
-比较时大小写不敏感. 此约定适用于所有声明为布尔语义的 input (如 `mock_wakatime`).
+比较时大小写不敏感. 此约定适用于所有声明为布尔语义的 input.
 
 ---
 
@@ -349,7 +317,7 @@ _TRUTHY = ["true", "1", "t", "y", "yes"]
 
 - 内容变更时, 触发提交至仓库
 - 内容未变 (幂等) 时, **不**产生 commit
-- Author, Email, Message 来自 frontmatter, 缺省有内置默认
+- Author, Email, Message 来自 action inputs (`commit_author` / `commit_email` / `commit_message`), 缺省由实现层 `DEFAULTS` 兜底
 
 ### 8.3 幂等
 
@@ -365,7 +333,7 @@ _TRUTHY = ["true", "1", "t", "y", "yes"]
 
 | 类别     | 示例                           |
 | -------- | ------------------------------ |
-| 配置错误 | frontmatter 字段缺失或类型错误 |
+| 配置错误 | action input 缺失或类型错误    |
 | 鉴权错误 | `WAKATIME_API_KEY` 缺失或 401  |
 | API 错误 | wakatime 非 2xx 响应或网络超时 |
 | 解析错误 | Token 或代码块语法错误         |
@@ -393,20 +361,13 @@ _TRUTHY = ["true", "1", "t", "y", "yes"]
 
 ---
 
-## 11. 附录
+## 10. 附录
 
-### 11.1 完整 profile.md 示例
+### 10.1 完整 profile.md 示例
 
 以下示例展示模板语法. 暴露字段的真实形态见 [model.md §上下文字段设计](./model.md#上下文字段设计); 示例中字段名为占位符, 落地时按 model.md 替换 (`total` → `waka.all.time`, `items` → `categories.all` / `projects.all` 等).
 
 ```markdown
----
-commit:
-  author: "Your Name"
-  email: "you@example.com"
-  message: "chore: update coding stats"
----
-
 # Hi there
 
 当前值: {total}
@@ -428,7 +389,7 @@ const top3 = items
 > 数据来源: wakatime
 ```
 
-### 11.2 最小 workflow 示例
+### 10.2 最小 workflow 示例
 
 ```yaml
 name: Update README
@@ -453,7 +414,7 @@ jobs:
           commit_message: "chore: update stats"
 ```
 
-### 11.3 参考资料
+### 10.3 参考资料
 
 - [model.md](./model.md) - API 返回结构 + 模板上下文字段设计 (本仓库)
 - [wakatime Developer Docs](https://wakatime.com/developers#stats) - API 规范

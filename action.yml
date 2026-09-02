@@ -10,31 +10,27 @@ inputs:
   profile_path:
     description: Source profile.md path
     required: false
-    default: profile.md
   output_path:
     description: Output README.md path
     required: false
-    default: README.md
   wakatime_api_key:
     description: Wakatime API key (or use WAKATIME_API_KEY secret)
-    required: false
-    default: ${{ secrets.WAKATIME_API_KEY }}
-  mock_wakatime:
-    description: "Enable wakatime mock mode (read fixtures from mock/*.json)"
-    required: false
-    default: "false"
+    required: true
   commit_author:
-    description: Commit author (overrides frontmatter)
+    description: Git commit author
     required: false
-    default: ""
   commit_email:
-    description: Commit email (overrides frontmatter)
+    description: Git commit email
     required: false
-    default: ""
   commit_message:
-    description: Commit message (overrides frontmatter)
+    description: Git commit message
     required: false
-    default: ""
+  sandbox_timeout:
+    description: Script execution timeout in milliseconds
+    required: false
+  sandbox_memory:
+    description: Sandbox isolate memory limit in MB
+    required: false
 
 outputs:
   readme_path:
@@ -75,4 +71,6 @@ runs:
         INPUT_COMMIT_AUTHOR: ${{ inputs.commit_author }}
         INPUT_COMMIT_EMAIL: ${{ inputs.commit_email }}
         INPUT_COMMIT_MESSAGE: ${{ inputs.commit_message }}
+        INPUT_SANDBOX_TIMEOUT: ${{ inputs.sandbox_timeout }}
+        INPUT_SANDBOX_MEMORY: ${{ inputs.sandbox_memory }}
       run: node ${{ github.action_path }}/dist/index.js
