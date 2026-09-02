@@ -138,6 +138,15 @@ const top3 = data
 - 代码块内 `{` 与 `}` 不触发 Token 解析, 一律视为字面量
 - 代码块执行后, 其顶层 `const`, `let`, `var`, `function` 与 `import` 声明进入共享作用域
 
+#### 4.1.4 求值上下文
+
+模板求值时, 沙箱内默认暴露以下顶层变量 (供 Token 与代码块引用):
+
+- `waka` — 编码总览 (时间/编辑行数/AI 成本/token)
+- `categories` / `projects` / `languages` / `editors` / `oss` / `dependencies` / `machines` — 7 类分组统计数组
+
+类型定义与字段说明见 [model.md §上下文字段设计](./model.md#上下文字段设计), 本节不重复.
+
 ### 4.2 wakatime 集成 (waka)
 
 #### 4.2.1 接口
@@ -160,17 +169,9 @@ GET https://wakatime.com/api/v1/users/current/stats/{range}?api_key={WAKATIME_AP
 
 #### 4.2.3 响应结构
 
-响应为单对象 (`last_7_days` 与 `all_time` 形态一致, 差异在 `range` 字段). 主要字段类别:
+`last_7_days` 与 `all_time` 形态一致, 差异在 `range` 字段. 完整字段定义见 [model.md §API 返回结构](./model.md#api-返回结构); 此处不冗余列举, 避免与上游 API 漂移. 上游文档参考 [wakatime Developer Docs](https://wakatime.com/developers#stats).
 
-| 类别 | 字段示例                                                                                                                           |
-| ---- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| 总计 | `total_seconds`, `human_readable_total`, `total_seconds_including_other_language`, `human_readable_total_including_other_language` |
-| 平均 | `daily_average`, `human_readable_daily_average` 及对应 `_including_other_language` 版本                                            |
-| 分类 | `categories[]`, `projects[]`, `languages[]`, `editors[]`, `operating_systems[]`, `dependencies[]`, `machines[]`                    |
-| 单值 | `best_day { date, text, total_seconds }`                                                                                           |
-| 元   | `range`, `start`, `end`, `timezone`, `user_id`, `username`                                                                         |
-
-完整字段定义见 [wakatime Developer Docs](https://wakatime.com/developers#stats).
+模板层不直接消费此结构 — Action 在数据层做清洗, 暴露字段见 [model.md §上下文字段设计](./model.md#上下文字段设计).
 
 #### 4.2.4 体积
 
@@ -401,7 +402,7 @@ import _ from "lodash"
 
 ### 11.1 完整 profile.md 示例
 
-以下示例展示模板语法. 实际暴露至模板上下文的字段名由实现决定, 此处使用占位符 (`total`, `average`, `peak`, `items`, `meta`).
+以下示例展示模板语法. 暴露字段的真实形态见 [model.md §上下文字段设计](./model.md#上下文字段设计); 示例中字段名为占位符, 落地时按 model.md 替换 (`total` → `waka.all.time`, `items` → `categories.all` / `projects.all` 等).
 
 ```markdown
 ---
@@ -465,5 +466,6 @@ jobs:
 
 ### 11.3 参考资料
 
+- [model.md](./model.md) - API 返回结构 + 模板上下文字段设计 (本仓库)
 - [wakatime Developer Docs](https://wakatime.com/developers#stats) - API 规范
 - [isolated-vm](https://github.com/laverdet/isolated-vm) - 沙箱实现
