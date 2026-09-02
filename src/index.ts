@@ -1,4 +1,5 @@
 import * as core from "@actions/core"
+import { getData } from "./data"
 
 interface ActionInputs {
   profilePath: string
@@ -33,11 +34,14 @@ async function run(): Promise<void> {
       core.debug(`wakatime_api_key: *** (length ${inputs.wakatimeApiKey.length})`)
     }
 
-    // TODO: 具体实现流程后续补充
+    const data = await getData(inputs.wakatimeApiKey, { mock: inputs.mockWakatime })
+    core.debug(`waka.all = ${data.waka.all ? "present" : "null"}, waka.week = ${data.waka.week ? "present" : "null"}`)
+
+    // TODO: 后续任务接入 parser / runtime / output — 把 data 注入沙箱求值, 写 README, commit
 
     core.setOutput("readme_path", inputs.outputPath)
     core.setOutput("changed", "false")
-    core.info("custom_waka_readme scaffolding ok (no-op)")
+    core.info("custom_waka_readme data layer ok (scaffolding)")
   }
   catch (error) {
     const msg = error instanceof Error ? error.message : String(error)

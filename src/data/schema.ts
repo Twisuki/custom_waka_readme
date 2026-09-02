@@ -1,14 +1,11 @@
-# API 结构和上下文字段设计
+export type StatsRange = "last_7_days" | "all_time"
 
-## API 返回结构
-
-```ts
-interface WakaResponse {
+export interface WakaResponse {
   data?: StatsData
   errors?: string[]
 }
 
-interface StatsData {
+export interface StatsData {
   total_seconds: number
   total_seconds_including_other_language: number
   human_readable_total: string
@@ -145,60 +142,3 @@ interface AIItemFields {
 interface ProjectItem extends CommonItem, AIItemFields {}
 
 interface EditorItem extends CommonItem, AIItemFields {}
-```
-
-## 上下文字段设计
-
-```ts
-interface CommonData {
-  name: string
-  time: number
-}
-
-interface Edit {
-  ai: number
-  human: number
-  total: number
-}
-
-interface Usage {
-  cost: number
-  token: {
-    input: number
-    output: number
-    total: number
-  }
-}
-
-interface CodingData {
-  addition: Edit
-  deletion: Edit
-  ai: Usage
-}
-
-interface WakaData {
-  time: number
-  range: {
-    start: string
-    end: string
-    days: number
-  }
-  username: string
-}
-
-interface Range<T> {
-  all: T | null
-  week: T | null
-}
-
-interface ContextData {
-  waka: Range<WakaData & CodingData>
-  categories: Range<Array<CommonData>>
-  projects: Range<Array<CommonData & CodingData>>
-  languages: Range<Array<CommonData>>
-  editors: Range<Array<CommonData & CodingData>>
-  oss: Range<Array<CommonData>>
-  dependencies: Range<Array<CommonData>>
-  machines: Range<Array<CommonData>>
-}
-```
