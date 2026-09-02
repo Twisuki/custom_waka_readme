@@ -1,47 +1,25 @@
 import type { Node } from "@/type"
 import * as core from "@actions/core"
+import { loadConfig } from "@/config"
 import { getData } from "@/data"
 import { getProfile } from "@/parse"
 import { render } from "@/render"
 import { runScripts } from "@/runtime"
 
-interface ActionInputs {
-  profilePath: string
-  outputPath: string
-  wakatimeApiKey: string
-  mockWakatime: boolean
-  commitAuthor: string
-  commitEmail: string
-  commitMessage: string
-}
-
-function readInputs(): ActionInputs {
-  return {
-    profilePath: core.getInput("profile_path") || "profile.md",
-    outputPath: core.getInput("output_path") || "README.md",
-    wakatimeApiKey: core.getInput("wakatime_api_key"),
-    mockWakatime: core.getBooleanInput("mock_wakatime"),
-    commitAuthor: core.getInput("commit_author"),
-    commitEmail: core.getInput("commit_email"),
-    commitMessage: core.getInput("commit_message"),
-  }
-}
-
 async function run(): Promise<void> {
   try {
-    const inputs = readInputs()
-
-    core.debug(`profile_path: ${inputs.profilePath}`)
-    core.debug(`output_path: ${inputs.outputPath}`)
-    core.debug(`mock_wakatime: ${inputs.mockWakatime}`)
-    if (inputs.wakatimeApiKey && !inputs.mockWakatime) {
-      core.debug(`wakatime_api_key: *** (length ${inputs.wakatimeApiKey.length})`)
+    const config = loadConfig()
+    core.debug(`profile_path: ${config.profile}`)
+    core.debug(`output_path: ${config.output}`)
+    core.debug(`mock_wakatime: ${config.mock}`)
+    if (config.apiKey && !config.mock) {
+      core.debug(`wakatime_api_key: *** (length ${config.apiKey.length})`)
     }
 
-    const data = await getData(inputs.wakatimeApiKey, { mock: inputs.mockWakatime })
+    const data = await getData(config.apiKey, { mock: config.mock })
     core.debug(`waka.all = ${data.waka.all ? "present" : "null"}, waka.week = ${data.waka.week ? "present" : "null"}`)
 
-    const nodes = await getProfile(inputs.profilePath)
+    const nodes = await getProfile(config.profile)
     core.debug(`getProfile: ${nodes.length} nodes`)
 
     const statics: Node[] = []
@@ -62,7 +40,7 @@ async function run(): Promise<void> {
 
     // TODO: 写入 README.md, 内容变更时触发 commit
 
-    core.setOutput("readme_path", inputs.outputPath)
+    core.setOutput("readme_path", config.output)
     core.setOutput("changed", "false")
     core.info("custom_waka_readme data layer ok (scaffolding)")
   }

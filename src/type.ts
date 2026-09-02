@@ -1,3 +1,19 @@
+// region Config
+
+export interface Config {
+  profile: string
+  output: string
+  apiKey: string
+  mock: boolean
+  commit: {
+    author: string
+    email: string
+    message: string
+  }
+}
+
+// endregion
+
 // region ContextData
 
 export interface CommonData {
