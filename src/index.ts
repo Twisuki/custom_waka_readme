@@ -2,7 +2,7 @@ import type { Node } from "@/type"
 import * as core from "@actions/core"
 import { loadConfig } from "@/config"
 import { getData } from "@/data"
-import { getProfile } from "@/parse"
+import { parse } from "@/parse"
 import { render } from "@/render"
 import { runScripts } from "@/runtime"
 
@@ -13,11 +13,11 @@ async function run(): Promise<void> {
     core.debug(`output_path: ${config.output}`)
     core.debug(`wakatime_api_key: *** (length ${config.apiKey.length})`)
 
+    const nodes = await parse(config.profile)
+    core.debug(`parse: ${nodes.length} nodes`)
+
     const data = await getData(config.apiKey)
     core.debug(`waka.all = ${data.waka.all ? "present" : "null"}, waka.week = ${data.waka.week ? "present" : "null"}`)
-
-    const nodes = await getProfile(config.profile)
-    core.debug(`getProfile: ${nodes.length} nodes`)
 
     const statics: Node[] = []
     const scripts: Node[] = []
