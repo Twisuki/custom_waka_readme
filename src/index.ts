@@ -1,5 +1,9 @@
+import type { Node } from "@/type"
 import * as core from "@actions/core"
 import { getData } from "@/data"
+import { getProfile } from "@/parse"
+import { render } from "@/render"
+import { runScripts } from "@/runtime"
 
 interface ActionInputs {
   profilePath: string
@@ -37,7 +41,26 @@ async function run(): Promise<void> {
     const data = await getData(inputs.wakatimeApiKey, { mock: inputs.mockWakatime })
     core.debug(`waka.all = ${data.waka.all ? "present" : "null"}, waka.week = ${data.waka.week ? "present" : "null"}`)
 
-    // TODO: 后续任务接入 parser / runtime / output — 把 data 注入沙箱求值, 写 README, commit
+    const nodes = await getProfile(inputs.profilePath)
+    core.debug(`getProfile: ${nodes.length} nodes`)
+
+    const statics: Node[] = []
+    const scripts: Node[] = []
+    nodes.forEach((n) => {
+      if (n.type === "static")
+        statics.push(n)
+      else
+        scripts.push(n)
+    })
+    core.debug(`split: statics=${statics.length}, scripts=${scripts.length}`)
+
+    const contents = await runScripts(scripts, data)
+    core.debug(`runScripts: ${contents.length} contents`)
+
+    const readme = await render([...statics, ...contents])
+    core.debug(`render: ${readme.length} chars`)
+
+    // TODO: 写入 README.md, 内容变更时触发 commit
 
     core.setOutput("readme_path", inputs.outputPath)
     core.setOutput("changed", "false")

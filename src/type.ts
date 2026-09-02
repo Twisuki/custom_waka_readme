@@ -1,3 +1,5 @@
+// region ContextData
+
 export interface CommonData {
   name: string
   time: number
@@ -39,6 +41,9 @@ export interface Range<T> {
   week: T | null
 }
 
+/**
+ * 注入自定义代码块的上下文
+ */
 export interface ContextData {
   waka: Range<WakaData & CodingData>
   categories: Range<Array<CommonData>>
@@ -49,3 +54,21 @@ export interface ContextData {
   dependencies: Range<Array<CommonData>>
   machines: Range<Array<CommonData>>
 }
+
+// endregion
+
+// region Node
+
+export type NodeType = "static" | "block" | "token"
+
+/**
+ * 文档解析结构
+ */
+export interface Node {
+  type: NodeType
+  index: number
+  line: number
+  content: string
+}
+
+// endregion

@@ -10,6 +10,9 @@ function emptyRange<T>(): Range<T> {
   return { all: null, week: null }
 }
 
+/**
+ * 获取 wakatime stats, 转换为上下文格式数据
+ */
 export async function getData(apiKey: string, options: GetDataOptions = {}): Promise<ContextData> {
   if (options.mock) {
     return {
