@@ -144,6 +144,42 @@ const top3 = data
 
 类型定义与字段说明见 [model.md §上下文字段设计](./model.md#上下文字段设计), 本节不重复.
 
+#### 4.1.5 求值流程
+
+Parser 把 `profile.md` 切成节点序列 (静态文本 / 代码块 / Token). 代码块与 Token 按源序拼成一段脚本, 在沙箱内执行一次, 共享脚本级词法作用域 (`const` / `let` 跨代码块可见).
+
+拼接模板:
+
+```js
+let __flag__
+const __token__ = []
+try {
+  __flag__ = { type: "block", line: 5 }
+  /* code block 0 原样插入 */
+  __flag__ = { type: "token", line: 12 }
+  __token__[0] = (tokenExpr0)
+  __flag__ = { type: "block", line: 18 }
+  /* code block 1 原样插入 */
+  __flag__ = { type: "token", line: 27 }
+  __token__[1] = (tokenExpr1)
+  __flag__ = null
+}
+catch (e) {
+  const f = __flag__
+  throw f ? new Error(`profile.md:${f.line} (${f.type}) ${e.message}`) : e
+}
+```
+
+要点:
+
+- 每节点执行前一行写 `__flag__ = { type, line }`, 抛错时 catch 读回溯定位
+- Token 表达式以 `(...)` 包裹, 强制求值上下文
+- 代码块行号 = 起始注释 `<!--CUSTOM_WAKA_START-->` 所在行
+- Token 行号 = token 表达式所在行; 同一行多 token 不细分
+- 执行完毕 host 从沙箱读取 `__token__` 数组, 按索引替换回模板
+
+错误粒度: 块级 (代码块内具体哪条语句挂的, 用户自己看代码块定位).
+
 ### 4.2 wakatime 集成 (waka)
 
 #### 4.2.1 接口
@@ -341,6 +377,15 @@ _TRUTHY = ["true", "1", "t", "y", "yes"]
 ### 9.2 日志
 
 所有错误在 Action 日志中以 `::error file={path},line={line}::` 格式输出, 使 GitHub UI 高亮并定位. 详细信息堆叠于其后.
+
+模板求值阶段的错误额外标注所属节点类型:
+
+```text
+::error file=profile.md,line=12 (token):: <message>
+::error file=profile.md,line=5  (block):: <message>
+```
+
+`line` 为该节点在 `profile.md` 中的源行号 (代码块取起始注释行, Token 取表达式所在行). 同一行多个 Token 不细分, 仅报该行号.
 
 ### 9.3 粒度
 
