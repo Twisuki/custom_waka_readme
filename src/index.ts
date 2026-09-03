@@ -72,5 +72,4 @@ async function run(): Promise<void> {
   }
 }
 
-// eslint-disable-next-line antfu/no-top-level-await
-await run()
+void run()
