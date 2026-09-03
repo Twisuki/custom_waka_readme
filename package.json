@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.1.0",
   "packageManager": "pnpm@11.24.0",
-  "description": "GitHub Action: render a custom wakatime-powered README from a profile.md template",
+  "description": "GitHub Action: render your custom wakatime-powered README",
   "author": "Twisuki",
   "license": "MIT",
   "scripts": {
