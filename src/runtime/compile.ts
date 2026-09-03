@@ -22,7 +22,7 @@ export function compile(nodes: Node[]): string {
 
   return [
     "let __flag__",
-    "const __token__ = []",
+    "var __token__ = []",
     "try {",
     lines.join("\n"),
     "}",

@@ -1,0 +1,3 @@
+# Hi
+
+{undefinedVar.foo}

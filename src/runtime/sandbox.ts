@@ -18,14 +18,14 @@ export class Sandbox {
     this.isolate = new ivm.Isolate({ memoryLimit: options.memory })
     this.context = this.isolate.createContextSync()
     const jail = this.context.global
-    jail.setSync("waka", data.waka)
-    jail.setSync("categories", data.categories)
-    jail.setSync("projects", data.projects)
-    jail.setSync("languages", data.languages)
-    jail.setSync("editors", data.editors)
-    jail.setSync("oss", data.oss)
-    jail.setSync("dependencies", data.dependencies)
-    jail.setSync("machines", data.machines)
+    jail.setSync("waka", data.waka, { copy: true })
+    jail.setSync("categories", data.categories, { copy: true })
+    jail.setSync("projects", data.projects, { copy: true })
+    jail.setSync("languages", data.languages, { copy: true })
+    jail.setSync("editors", data.editors, { copy: true })
+    jail.setSync("oss", data.oss, { copy: true })
+    jail.setSync("dependencies", data.dependencies, { copy: true })
+    jail.setSync("machines", data.machines, { copy: true })
     this.timeout = options.timeout
   }
 
@@ -39,9 +39,9 @@ export class Sandbox {
   /**
    * 执行脚本
    */
-  async run(source: string): Promise<string[]> {
+  async run(source: string): Promise<unknown[]> {
     this.context.evalSync(source, { timeout: this.timeout })
     const ref = this.context.global.getSync("__token__")
-    return ref.copySync() as string[]
+    return ref.copySync() as unknown[]
   }
 }

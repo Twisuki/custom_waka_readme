@@ -9,4 +9,7 @@ export default antfu({
   formatters: {
     markdown: true,
   },
+  ignores: [
+    "test/e2e/fixtures/**",
+  ],
 })

@@ -51,8 +51,8 @@ export function formatData(all: StatsData | null, week: StatsData | null): Conte
     s.projects.map(i => ({
       name: i.name,
       time: i.total_seconds,
-      addition: formatEdit(s.ai_additions, s.human_additions),
-      deletion: formatEdit(s.ai_deletions, s.human_deletions),
+      addition: formatEdit(i.ai_additions, i.human_additions),
+      deletion: formatEdit(i.ai_deletions, i.human_deletions),
       ai: formatUsage(i),
     })))
 

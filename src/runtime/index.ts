@@ -16,7 +16,7 @@ export async function runScripts(scripts: Node[], data: ContextData, options: Sa
       if (n.type === "block")
         return { ...n, content: "" }
       if (n.type === "token")
-        return { ...n, type: "static", content: results[tokenIndex++] }
+        return { ...n, type: "static", content: String(results[tokenIndex++]) }
       return n
     })
   }
