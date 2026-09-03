@@ -51,8 +51,11 @@ function tokenize(
         content: text.slice(lastEnd, match.index),
       })
     }
+    const isMulti
+      = text[match.index - 1] === "{"
+        && text[match.index + match[0].length] === "}"
     drafts.push({
-      type: "token",
+      type: isMulti ? "static" : "token",
       line: lineOf(text, match.index),
       content: match[0].slice(1, -1),
     })

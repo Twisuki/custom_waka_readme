@@ -4,3 +4,5 @@ Total: 864000
 Week: 14400
 User: test-user
 Top: TypeScript
+
+`{waka.all.time}`: `864000`

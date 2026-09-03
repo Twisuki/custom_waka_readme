@@ -93,4 +93,62 @@ describe("parse", () => {
   it("读取不存在路径: 抛出 wrapped 错误", async () => {
     await expect(parse(join(dir, "does-not-exist.md"))).rejects.toThrow(/failed to read profile/)
   })
+
+  it("双层 {{x}}: 切三段 static, 拼回字面量 {x}", async () => {
+    const nodes = await withProfile("{{x}}")
+    expect(nodes).toEqual([
+      { type: "static", index: 0, line: 1, content: "{" },
+      { type: "static", index: 1, line: 1, content: "x" },
+      { type: "static", index: 2, line: 1, content: "}" },
+    ])
+  })
+
+  it("三层 {{{x}}}: 外层各保留一个, 拼回 {{x}}", async () => {
+    const nodes = await withProfile("{{{x}}}")
+    expect(nodes).toEqual([
+      { type: "static", index: 0, line: 1, content: "{{" },
+      { type: "static", index: 1, line: 1, content: "x" },
+      { type: "static", index: 2, line: 1, content: "}}" },
+    ])
+  })
+
+  it("不平衡 {{x}: 左侧多一个 {, 不剥离, 内部走 token", async () => {
+    const nodes = await withProfile("{{x}")
+    expect(nodes).toEqual([
+      { type: "static", index: 0, line: 1, content: "{" },
+      { type: "token", index: 1, line: 1, content: "x" },
+    ])
+  })
+
+  it("不平衡 {x}}: 右侧多一个 }, 不剥离, 内部走 token", async () => {
+    const nodes = await withProfile("{x}}")
+    expect(nodes).toEqual([
+      { type: "token", index: 0, line: 1, content: "x" },
+      { type: "static", index: 1, line: 1, content: "}" },
+    ])
+  })
+
+  it("双层与单层混合 {{a}}{b}: 各自正确判定", async () => {
+    const nodes = await withProfile("{{a}}{b}")
+    expect(nodes).toEqual([
+      { type: "static", index: 0, line: 1, content: "{" },
+      { type: "static", index: 1, line: 1, content: "a" },
+      { type: "static", index: 2, line: 1, content: "}" },
+      { type: "token", index: 3, line: 1, content: "b" },
+    ])
+  })
+
+  it("多层与前后静态混合: 行号与内容正确", async () => {
+    const nodes = await withProfile(
+      "before {{x}} mid\n"
+      + "{y} after",
+    )
+    expect(nodes).toEqual([
+      { type: "static", index: 0, line: 1, content: "before {" },
+      { type: "static", index: 1, line: 1, content: "x" },
+      { type: "static", index: 2, line: 1, content: "} mid\n" },
+      { type: "token", index: 3, line: 2, content: "y" },
+      { type: "static", index: 4, line: 2, content: " after" },
+    ])
+  })
 })

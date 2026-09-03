@@ -54,7 +54,7 @@ The wakatime variables are pre-injected and ready to use; see [API](#api) for th
 
 The `{list}` token on the last line uses `list` defined in the block above. Code blocks and tokens execute top to bottom in source order, sharing the same scope.
 
-To emit a literal `{` or `}`, write it as `{{` or `}}`. If you need n braces, write n + 1 braces.
+To emit a literal `{waka.all.time}`, write it as `{{waka.all.time}}`. When encountering multiple layers of braces, the parser automatically strips one layer and treats the result as a literal rather than an expression; so if you need n layers of braces, write n + 1.
 
 > Do not define `__token__` or `__flag__` in your template. They are reserved for internal use by the action.
 
