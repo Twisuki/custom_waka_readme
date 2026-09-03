@@ -50,7 +50,7 @@ const list = languages.week
 {list}
 ```
 
-The wakatime variables are pre-injected and ready to use; see [API](#api) for the full list.
+Wakatime variables are injected and ready to use; see [API](#api) for the full list. They are reserved, so do not redefine or modify them.
 
 The `{list}` token on the last line uses `list` defined in the block above. Code blocks and tokens execute top to bottom in source order, sharing the same scope.
 

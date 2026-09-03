@@ -13,25 +13,25 @@ Range covers {waka.week.range.days} days, from `{waka.week.range.start}` to `{wa
 
 <!--CUSTOM_WAKA_START-->
 
-const top = languages.week
+const topLangs = languages.week
 .slice(0, 3)
 .map((l, i) => `${i + 1}. **${l.name}** - ${(l.time / 3600).toFixed(2)} hrs`)
 .join("\n")
 <!--CUSTOM_WAKA_END-->
 
-{top}
+{topLangs}
 
 ## Top 3 Editors All Time
 
 <!--CUSTOM_WAKA_START-->
 
-const editors = editors.all
+const topEditors = editors.all
 .slice(0, 3)
 .map((e, i) => `${i + 1}. ${e.name} - ${(e.time / 3600).toFixed(2)} hrs`)
 .join("\n")
 <!--CUSTOM_WAKA_END-->
 
-{editors}
+{topEditors}
 
 ## Literal Brace Test
 
