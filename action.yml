@@ -48,9 +48,9 @@ runs:
         node-version: "22"
         cache: pnpm
 
-    - name: Enable pnpm via corepack
-      shell: bash
-      run: corepack enable
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 11.24.0
 
     - name: Install dependencies
       shell: bash
