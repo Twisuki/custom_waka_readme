@@ -4,6 +4,7 @@ trustPolicy: no-downgrade
 
 allowBuilds:
   esbuild: true
+  isolated-vm: true
 
 # 覆盖被 pnpm trust-policy 标记为 "High-risk trust downgrade" (可能 takeover) 的传递依赖
 # undici@5.29.0 通过 @actions/http-client@2.2.3 → @actions/core@1.11.1 进入

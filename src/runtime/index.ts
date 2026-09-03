@@ -1,8 +1,26 @@
+import type { SandboxOptions } from "@/runtime/sandbox"
 import type { ContextData, Node } from "@/type"
+import { compile } from "@/runtime/compile"
+import { Sandbox } from "@/runtime/sandbox"
 
 /**
- * 在沙箱中执行 scripts 节点, 返回全新 Node[]
+ * 运行脚本 Node
  */
-export async function runScripts(_scripts: Node[], _data: ContextData): Promise<Node[]> {
-  throw new Error("TODO: runScripts")
+export async function runScripts(scripts: Node[], data: ContextData, options: SandboxOptions): Promise<Node[]> {
+  const source = compile(scripts)
+  const sandbox = new Sandbox(data, options)
+  try {
+    const results = await sandbox.run(source)
+    let tokenIndex = 0
+    return scripts.map((n) => {
+      if (n.type === "block")
+        return { ...n, content: "" }
+      if (n.type === "token")
+        return { ...n, type: "static", content: results[tokenIndex++] }
+      return n
+    })
+  }
+  finally {
+    sandbox.destroy()
+  }
 }

@@ -29,10 +29,10 @@ async function run(): Promise<void> {
     })
     core.debug(`split: statics=${statics.length}, scripts=${scripts.length}`)
 
-    const contents = await runScripts(scripts, data)
-    core.debug(`runScripts: ${contents.length} contents`)
+    const results = await runScripts(scripts, data, config.sandbox)
+    core.debug(`runScripts: ${results.length} contents`)
 
-    const readme = await render([...statics, ...contents])
+    const readme = await render([...statics, ...results])
     core.debug(`render: ${readme.length} chars`)
 
     // TODO: 写入 README.md, 内容变更时触发 commit
