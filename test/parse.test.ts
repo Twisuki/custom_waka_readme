@@ -50,7 +50,7 @@ describe("parse", () => {
     )
     expect(nodes.map(n => n.type)).toEqual(["static", "token", "static", "block", "static", "token"])
     expect(nodes[0].content).toBe("# Hi\n\nTime: ")
-    expect(nodes[3].content).toBe("\nconst x = 1\n")
+    expect(nodes[3].content).toBe("const x = 1\n")
   })
 
   it("index 连续递增", async () => {
@@ -70,8 +70,9 @@ describe("parse", () => {
     )
     expect(nodes[0].line).toBe(1)
     expect(nodes[1].line).toBe(3)
+    expect(nodes[2].line).toBe(3)
     expect(nodes[3].line).toBe(4)
-    expect(nodes[5].line).toBe(7)
+    expect(nodes[4].line).toBe(7)
   })
 
   it("跨行大括号: 不识别为 token, 当 static 字面量", async () => {

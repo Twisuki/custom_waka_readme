@@ -1,7 +1,6 @@
 # Hi
 
 
-
 ## Languages
 
 - TypeScript: 10800s

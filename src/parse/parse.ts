@@ -1,7 +1,7 @@
 import type { Node } from "@/type"
 
-const START_TAG = "<!--CUSTOM_WAKA_START-->"
-const END_TAG = "<!--CUSTOM_WAKA_END-->"
+const START_TAG = "<!--CUSTOM_WAKA_START-->\n"
+const END_TAG = "<!--CUSTOM_WAKA_END-->\n"
 const TOKEN_REGEX = /\{[^{}\n]*\}/g
 
 type Draft = Omit<Node, "index">
