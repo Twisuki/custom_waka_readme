@@ -1,0 +1,20 @@
+name: Test Custom Waka README
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Twisuki/custom_waka_readme@main
+        with:
+          profile_path: test/waka/profile.md
+          output_path: test/waka/output.md
+          wakatime_api_key: ${{ secrets.WAKATIME_API_KEY }}
+          commit_author: test_bot
+          commit_message: "test: 自动测试"
