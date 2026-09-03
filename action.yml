@@ -54,20 +54,22 @@ runs:
 
     - name: Install dependencies
       shell: bash
+      working-directory: ${{ github.action_path }}
       run: pnpm install --frozen-lockfile
 
     - name: Build
       shell: bash
+      working-directory: ${{ github.action_path }}
       run: pnpm build
 
     - name: Run
       id: run
       shell: bash
+      working-directory: ${{ github.action_path }}
       env:
         INPUT_PROFILE_PATH: ${{ inputs.profile_path }}
         INPUT_OUTPUT_PATH: ${{ inputs.output_path }}
         INPUT_WAKATIME_API_KEY: ${{ inputs.wakatime_api_key }}
-        INPUT_MOCK_WAKATIME: ${{ inputs.mock_wakatime }}
         INPUT_COMMIT_AUTHOR: ${{ inputs.commit_author }}
         INPUT_COMMIT_EMAIL: ${{ inputs.commit_email }}
         INPUT_COMMIT_MESSAGE: ${{ inputs.commit_message }}
