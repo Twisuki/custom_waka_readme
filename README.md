@@ -177,3 +177,7 @@ interface WakaData {
   username: string
 }
 ```
+
+## License
+
+[MIT](./LICENSE)
