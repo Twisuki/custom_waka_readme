@@ -1,14 +1,17 @@
-import type { Node } from "@/type"
+import type { Config, Node } from "@/type"
+import { writeFile } from "node:fs/promises"
 import * as core from "@actions/core"
+import { commit } from "@/commit"
 import { loadConfig } from "@/config"
 import { getData } from "@/data"
 import { parse } from "@/parse"
 import { runScripts } from "@/runtime"
 
 async function run(): Promise<void> {
+  let config: Config | undefined
   try {
     // region config
-    const config = loadConfig()
+    config = loadConfig()
     core.debug(`profile_path: ${config.profile}`)
     core.debug(`output_path: ${config.output}`)
     core.debug(`wakatime_api_key: *** (length ${config.apiKey.length})`)
@@ -49,15 +52,23 @@ async function run(): Promise<void> {
     core.debug(`render: ${readme.length} chars`)
     // endregion
 
-    // TODO: 写入 README.md, 内容变更时触发 commit
-
+    // region commit
+    await writeFile(config.output, readme, "utf-8")
+    await commit(config.output, config)
     core.setOutput("readme_path", config.output)
-    core.setOutput("changed", "false")
-    core.info("custom_waka_readme data layer ok (scaffolding)")
+    core.info("custom_waka_readme done")
+    // endregion
   }
   catch (error) {
-    const msg = error instanceof Error ? error.message : String(error)
-    core.setFailed(msg)
+    const err = error instanceof Error ? error : new Error(String(error))
+    const m = err.message.match(/^profile\.md:(\d+) \((block|token)\) ([\s\S]*)$/)
+    if (m && config) {
+      core.error(m[3], {
+        file: config.profile,
+        startLine: Number(m[1]),
+      })
+    }
+    core.setFailed(err.message)
   }
 }
 

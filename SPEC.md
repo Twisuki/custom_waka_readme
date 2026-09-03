@@ -62,7 +62,6 @@
 | 安全性     | 用户脚本在沙箱中执行, 物理隔离, 真超时, 内存受控                                             |
 | 可移植性   | 支持全部 GitHub-hosted runner 平台 (linux-x64, linux-arm64, win-x64, macos-x64, macos-arm64) |
 | 可观测性   | 错误位置 (行号, 表达式) 准确输出至 Action 日志, 便于排障                                     |
-| 幂等性     | 输入不变时输出不变, 不产生空 commit                                                          |
 | 零外部状态 | Action 不依赖本地配置文件, 全部配置来自 Action inputs                                        |
 
 ---
@@ -315,13 +314,9 @@ _TRUTHY = ["true", "1", "t", "y", "yes"]
 
 ### 8.2 提交
 
-- 内容变更时, 触发提交至仓库
-- 内容未变 (幂等) 时, **不**产生 commit
+每次执行都触发提交至仓库
+
 - Author, Email, Message 来自 action inputs (`commit_author` / `commit_email` / `commit_message`), 缺省由实现层 `DEFAULTS` 兜底
-
-### 8.3 幂等
-
-通过字节级对比本次渲染结果与仓库当前 `README.md` 内容判定, 一致则跳过提交.
 
 ---
 
@@ -408,10 +403,6 @@ jobs:
       - uses: Twisuki/custom_waka_readme@v1
         with:
           wakatime_api_key: ${{ secrets.WAKATIME_API_KEY }}
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          file_pattern: README.md
-          commit_message: "chore: update stats"
 ```
 
 ### 10.3 参考资料
