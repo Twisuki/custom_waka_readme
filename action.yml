@@ -75,4 +75,4 @@ runs:
         INPUT_COMMIT_MESSAGE: ${{ inputs.commit_message }}
         INPUT_SANDBOX_TIMEOUT: ${{ inputs.sandbox_timeout }}
         INPUT_SANDBOX_MEMORY: ${{ inputs.sandbox_memory }}
-      run: node ${{ github.action_path }}/dist/index.js
+      run: node ${{ github.action_path }}/dist/index.cjs

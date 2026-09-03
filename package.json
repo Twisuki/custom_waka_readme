@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "fix": "eslint . --fix",
     "check": "tsc --noEmit",
-    "build": "tsc -p tsconfig.build.json && esbuild src/index.ts --bundle --platform=node --target=node22 --format=esm --alias:@=./src --outfile=dist/index.js",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node22 --format=cjs --alias:@=./src --outfile=dist/index.cjs",
     "test": "vitest",
     "test:run": "vitest run"
   },
