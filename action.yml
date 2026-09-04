@@ -36,9 +36,6 @@ outputs:
   readme_path:
     description: Path to the rendered README
     value: ${{ steps.run.outputs.readme_path }}
-  changed:
-    description: Whether the README content changed (truthy / falsy string)
-    value: ${{ steps.run.outputs.changed }}
 
 runs:
   using: composite
