@@ -1,7 +1,7 @@
 {
   "name": "custom_waka_readme",
   "type": "module",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "packageManager": "pnpm@11.24.0",
   "description": "GitHub Action: render your custom wakatime-powered README",
   "author": "Twisuki",

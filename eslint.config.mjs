@@ -11,5 +11,6 @@ export default antfu({
   },
   ignores: [
     "test/e2e/fixtures/**",
+    "test/waka/**",
   ],
 })
