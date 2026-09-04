@@ -50,8 +50,6 @@ runs:
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
-        cache: pnpm
-        cache-dependency-path: ${{ github.action_path }}/pnpm-lock.yaml
 
     - name: Install dependencies
       shell: bash
