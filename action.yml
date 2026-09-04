@@ -65,7 +65,7 @@ runs:
     - name: Run
       id: run
       shell: bash
-      working-directory: ${{ github.action_path }}
+      working-directory: ${{ github.workspace }}
       env:
         INPUT_PROFILE_PATH: ${{ inputs.profile_path }}
         INPUT_OUTPUT_PATH: ${{ inputs.output_path }}
