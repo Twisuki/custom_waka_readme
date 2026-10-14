@@ -109,16 +109,17 @@ jobs:
           sandbox_memory: 128
 ```
 
-| Input              | Required | Default                                                 | Description                |
-| ------------------ | -------- | ------------------------------------------------------- | -------------------------- |
-| `profile_path`     | no       | `profile.md`                                            | Source template path       |
-| `output_path`      | no       | `README.md`                                             | Output README path         |
-| `wakatime_api_key` | yes      | -                                                       | Wakatime API key           |
-| `commit_author`    | no       | `waka_bot`                                              | Git commit author name     |
-| `commit_email`     | no       | `41898282+github-actions[bot]@users.noreply.github.com` | Git commit author email    |
-| `commit_message`   | no       | `feat: Update custom waka readme`                       | Git commit message         |
-| `sandbox_timeout`  | no       | `10000`                                                 | Execution timeout in ms    |
-| `sandbox_memory`   | no       | `128`                                                   | Sandbox memory limit in MB |
+| Input              | Required | Default                                                 | Description                                                     |
+| ------------------ | -------- | ------------------------------------------------------- | --------------------------------------------------------------- |
+| `profile_path`     | no       | `profile.md`                                            | Source template path                                            |
+| `output_path`      | no       | `README.md`                                             | Output README path                                              |
+| `wakatime_api_key` | yes      | -                                                       | Wakatime API key                                                |
+| `commit_author`    | no       | `waka_bot`                                              | Git commit author name                                          |
+| `commit_email`     | no       | `41898282+github-actions[bot]@users.noreply.github.com` | Git commit author email                                         |
+| `commit_message`   | no       | `feat: Update custom waka readme`                       | Git commit message                                              |
+| `skip_commit`      | no       | `false`                                                 | Skip git commit/push (leave the rendered file in the workspace) |
+| `sandbox_timeout`  | no       | `10000`                                                 | Execution timeout in ms                                         |
+| `sandbox_memory`   | no       | `128`                                                   | Sandbox memory limit in MB                                      |
 
 ## API
 

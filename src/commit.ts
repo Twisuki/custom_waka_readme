@@ -10,6 +10,15 @@ export async function commit(path: string, config: Config): Promise<void> {
   await exec("git", ["config", "user.name", commit.author])
   await exec("git", ["config", "user.email", commit.email])
   await exec("git", ["add", path])
+
+  const status = await exec("git", ["diff", "--cached", "--quiet"], {
+    ignoreReturnCode: true,
+  })
+  if (status === 0) {
+    core.info(`no changes to commit: ${path}`)
+    return
+  }
+
   await exec("git", [
     "commit",
     "-m",

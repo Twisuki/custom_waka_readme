@@ -25,6 +25,9 @@ inputs:
   commit_message:
     description: Git commit message
     required: false
+  skip_commit:
+    description: Skip git commit/push, leave the rendered file in the workspace
+    required: false
   sandbox_timeout:
     description: Script execution timeout in milliseconds
     required: false
@@ -69,6 +72,7 @@ runs:
         INPUT_COMMIT_AUTHOR: ${{ inputs.commit_author }}
         INPUT_COMMIT_EMAIL: ${{ inputs.commit_email }}
         INPUT_COMMIT_MESSAGE: ${{ inputs.commit_message }}
+        INPUT_SKIP_COMMIT: ${{ inputs.skip_commit }}
         INPUT_SANDBOX_TIMEOUT: ${{ inputs.sandbox_timeout }}
         INPUT_SANDBOX_MEMORY: ${{ inputs.sandbox_memory }}
       run: node ${{ github.action_path }}/dist/index.cjs

@@ -9,6 +9,7 @@ export interface Config {
     email: string
     message: string
   }
+  skipCommit: boolean
   sandbox: {
     timeout: number
     memory: number

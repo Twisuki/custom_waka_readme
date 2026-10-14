@@ -28,6 +28,7 @@ export function loadConfig(): Config {
       email: core.getInput("commit_email") || DEFAULTS.commit.email,
       message: core.getInput("commit_message") || DEFAULTS.commit.message,
     },
+    skipCommit: core.getInput("skip_commit").trim().toLowerCase() === "true",
     sandbox: {
       timeout: Number(core.getInput("sandbox_timeout")) || DEFAULTS.sandbox.timeout,
       memory: Number(core.getInput("sandbox_memory")) || DEFAULTS.sandbox.memory,

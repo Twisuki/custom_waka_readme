@@ -54,7 +54,10 @@ async function run(): Promise<void> {
 
     // region commit
     await writeFile(config.output, readme, "utf-8")
-    await commit(config.output, config)
+    if (config.skipCommit)
+      core.info("skip_commit: rendered file left in workspace, not committing")
+    else
+      await commit(config.output, config)
     core.setOutput("readme_path", config.output)
     core.info("custom_waka_readme done")
     // endregion
