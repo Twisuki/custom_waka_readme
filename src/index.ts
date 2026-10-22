@@ -14,7 +14,7 @@ async function run(): Promise<void> {
     config = loadConfig()
     core.debug(`profile_path: ${config.profile}`)
     core.debug(`output_path: ${config.output}`)
-    core.debug(`wakatime_api_key: *** (length ${config.apiKey.length})`)
+    core.debug(`wakatime_token: *** (length ${config.token.length})`)
     // endregion
 
     // region parse
@@ -23,7 +23,7 @@ async function run(): Promise<void> {
     // endregion
 
     // region waka
-    const data = await getData(config.apiKey)
+    const data = await getData(config.token)
     core.debug(`waka.all = ${data.waka.all ? "present" : "null"}, waka.week = ${data.waka.week ? "present" : "null"}`)
     // endregion
 

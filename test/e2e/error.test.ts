@@ -18,7 +18,7 @@ describe("e2e: error", () => {
         scripts.push(n)
     })
 
-    const data = await getData("mock-api-key")
+    const data = await getData("mock-token")
     await expect(
       runScripts(scripts, data, { timeout: 5000, memory: 64 }),
     ).rejects.toThrow(/profile\.md:3 \(token\)/)

@@ -15,6 +15,6 @@ jobs:
         with:
           profile_path: test/waka/profile.md
           output_path: test/waka/output.md
-          wakatime_api_key: ${{ secrets.WAKATIME_API_KEY }}
+          wakatime_token: ${{ secrets.WAKATIME_TOKEN }}
           commit_author: test_bot
           commit_message: "test: 自动测试"

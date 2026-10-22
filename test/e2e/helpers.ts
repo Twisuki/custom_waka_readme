@@ -31,7 +31,7 @@ export async function runProfile(profilePath: string): Promise<string> {
       scripts.push(n)
   })
 
-  const data = await getData("mock-api-key")
+  const data = await getData("mock-token")
   const results = await runScripts(scripts, data, { timeout: 5000, memory: 64 })
 
   return [...statics, ...results]

@@ -3,7 +3,7 @@
 export interface Config {
   profile: string
   output: string
-  apiKey: string
+  token: string
   commit: {
     author: string
     email: string

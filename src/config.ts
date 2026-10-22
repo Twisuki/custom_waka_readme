@@ -22,7 +22,7 @@ export function loadConfig(): Config {
   return {
     profile: core.getInput("profile_path") || DEFAULTS.profile,
     output: core.getInput("output_path") || DEFAULTS.output,
-    apiKey: core.getInput("wakatime_api_key"),
+    token: core.getInput("wakatime_token"),
     commit: {
       author: core.getInput("commit_author") || DEFAULTS.commit.author,
       email: core.getInput("commit_email") || DEFAULTS.commit.email,

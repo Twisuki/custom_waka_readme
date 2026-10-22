@@ -13,8 +13,8 @@ inputs:
   output_path:
     description: Output README.md path
     required: false
-  wakatime_api_key:
-    description: Wakatime API key (or use WAKATIME_API_KEY secret)
+  wakatime_token:
+    description: WakaTime OAuth access token
     required: true
   commit_author:
     description: Git commit author
@@ -65,7 +65,7 @@ runs:
       env:
         INPUT_PROFILE_PATH: ${{ inputs.profile_path }}
         INPUT_OUTPUT_PATH: ${{ inputs.output_path }}
-        INPUT_WAKATIME_API_KEY: ${{ inputs.wakatime_api_key }}
+        INPUT_WAKATIME_TOKEN: ${{ inputs.wakatime_token }}
         INPUT_COMMIT_AUTHOR: ${{ inputs.commit_author }}
         INPUT_COMMIT_EMAIL: ${{ inputs.commit_email }}
         INPUT_COMMIT_MESSAGE: ${{ inputs.commit_message }}

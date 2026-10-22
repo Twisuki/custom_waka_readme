@@ -1,7 +1,7 @@
 import type { StatsRange, WakaResponse } from "@/data/schema"
 
-export async function fetchData(apiKey: string, range: StatsRange): Promise<WakaResponse> {
-  const url = `https://wakatime.com/api/v1/users/current/stats/${range}?api_key=${encodeURIComponent(apiKey)}`
+export async function fetchData(token: string, range: StatsRange): Promise<WakaResponse> {
+  const url = `https://wakatime.com/api/v1/users/current/stats/${range}?api_key=${encodeURIComponent(token)}`
   const res = await fetch(url)
   if (!res.ok) {
     throw new Error(`wakatime ${range}: HTTP ${res.status} ${res.statusText}`)
