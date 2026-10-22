@@ -1,6 +1,6 @@
 import type { Config } from "@/type"
-import * as core from "@actions/core"
 import { exec } from "@actions/exec"
+import { log } from "@/logger"
 
 /**
  * 提交到 git 仓库
@@ -18,5 +18,5 @@ export async function commit(path: string, config: Config): Promise<void> {
     `${commit.author} <${commit.email}>`,
   ])
   await exec("git", ["push"])
-  core.info(`committed and pushed: ${path}`)
+  log.info("committed and pushed:", path)
 }

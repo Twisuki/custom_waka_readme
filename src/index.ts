@@ -4,6 +4,7 @@ import * as core from "@actions/core"
 import { commit } from "@/commit"
 import { loadConfig } from "@/config"
 import { getData } from "@/data"
+import { log } from "@/logger"
 import { parse } from "@/parse"
 import { runScripts } from "@/runtime"
 
@@ -12,19 +13,19 @@ async function run(): Promise<void> {
   try {
     // region config
     config = loadConfig()
-    core.debug(`profile_path: ${config.profile}`)
-    core.debug(`output_path: ${config.output}`)
-    core.debug(`wakatime_token: *** (length ${config.token.length})`)
+    log.info("profile_path:", config.profile)
+    log.info("output_path:", config.output)
+    log.info(`wakatime_token: *** (length ${config.token.length})`)
     // endregion
 
     // region parse
     const nodes = await parse(config.profile)
-    core.debug(`parse: ${nodes.length} nodes`)
+    log.info("parse:", nodes.length, "nodes")
     // endregion
 
     // region waka
     const data = await getData(config.token)
-    core.debug(`waka.all = ${data.waka.all ? "present" : "null"}, waka.week = ${data.waka.week ? "present" : "null"}`)
+    log.info("waka.all =", data.waka.all ? "present" : "null", "waka.week =", data.waka.week ? "present" : "null")
     // endregion
 
     // region split
@@ -36,12 +37,12 @@ async function run(): Promise<void> {
       else
         scripts.push(n)
     })
-    core.debug(`split: statics=${statics.length}, scripts=${scripts.length}`)
+    log.info("split: statics =", statics.length, "scripts =", scripts.length)
     // endregion
 
     // region runtime
     const results = await runScripts(scripts, data, config.sandbox)
-    core.debug(`runScripts: ${results.length} contents`)
+    log.info("runScripts:", results.length, "contents")
     // endregion
 
     // region render
@@ -49,14 +50,14 @@ async function run(): Promise<void> {
       .toSorted((a, b) => a.index - b.index)
       .map(n => n.content)
       .join("")
-    core.debug(`render: ${readme.length} chars`)
+    log.info("render:", readme.length, "chars")
     // endregion
 
     // region commit
     await writeFile(config.output, readme, "utf-8")
     await commit(config.output, config)
     core.setOutput("readme_path", config.output)
-    core.info("custom_waka_readme done")
+    log.info("custom_waka_readme done")
     // endregion
   }
   catch (error) {
